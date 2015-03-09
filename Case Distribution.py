@@ -17,7 +17,11 @@ import random
 from nltk.tree import ParentedTree
 
 
+<<<<<<< HEAD
 misses = [[0,0], [0, 0], [0,0]]
+=======
+misses = [0, 0, 0]
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
 ##############################################################################
 # My functions
 # NOTE: I use 'st' here to refer to all subtree variables;
@@ -215,7 +219,11 @@ def mark_all(tree, case):
     """
     for st in tree.subtrees():
         if is_noun(st):
+<<<<<<< HEAD
             tree[st.treeposition()] = mark(st, case)
+=======
+            st = mark(st, case)
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
     return tree
 
 
@@ -390,7 +398,11 @@ def mark_random(tree, freqs=None):
         freqs = {'N': 1, 'A': 1, 'D': 1, 'G': 1}
     for st in tree.subtrees():
         if is_noun(st) and is_unmarked(st):
+<<<<<<< HEAD
             tree[st.treeposition()] = mark(st, choose_rand_weighted(freqs))
+=======
+            st = mark(st, choose_rand_weighted(freqs))
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
     return tree
 
 
@@ -440,7 +452,11 @@ def crosses(st, ancestor, layer):
     :return:
     """
     assert st.root() == ancestor.root()
+<<<<<<< HEAD
     assert ns_dominates(ancestor, st)
+=======
+    assert dominates(ancestor, st)
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
     if st == ancestor:
         return False
     st = st.parent()
@@ -468,7 +484,11 @@ def same_domain(a, b):
     return not (crosses(a, lca, 'CP') or crosses(b, lca, 'CP'))
 
 
+<<<<<<< HEAD
 def mark_args(verb, case_frame):
+=======
+def mark_args(verb, marking_paradigm):
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
     """
     Take a lexical item (verb, and perhaps later preposition) and find the
     arguments (like subject, direct object complement) that it lexically
@@ -481,16 +501,25 @@ def mark_args(verb, case_frame):
         o	Indirect Object – search verb's sister’s subtree for NP-OB2 or
             NP-OB3 (stop at same nodes as)
     :param verb: a verb node in a tree
+<<<<<<< HEAD
     :param case_frame: a three-letter string describing which case to
             mark each of the three arguments of the verb
     """
     if len(case_frame) != 3:
         print('Error with lexical case frame', '"' + case_frame + '"')
+=======
+    :param marking_paradigm: a three-letter string describing which case to
+            mark each of the three arguments of the verb
+    """
+    if len(marking_paradigm) != 3:
+        print('Error with lexical marking paradigm', '"' + marking_paradigm + '"')
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
         sys.exit(1)
     if not is_verb(verb):
         print('Error in mark_args function:', verb, 'is not a verb.')
         sys.exit(1)
 
+<<<<<<< HEAD
     # For each argument (subject, direct object, or indirect object), if the
     # verb governs the argument's case, try to find the given argument.
     # To do this, we search the tree for NP-ARG nodes and find out which, if
@@ -540,6 +569,65 @@ def mark_args(verb, case_frame):
                 print('Error with number of', str(arg_types[i][0]) + 's found:', found)
                 sys.exit(1)
 
+=======
+    tree = verb.root()
+    # First, if the verb governs the subject's case, find the subject.
+    # To do this, we search the tree for an NP-SBJ and find
+    # which, if any, c-command the verb
+    if marking_paradigm[0] != '-':
+        sbjs = []
+        for st in tree.subtrees():
+            if st.label()[:6] == 'NP-SBJ' and c_commands(st, verb) and \
+                    same_domain(st, verb):  # make sure it's the right verb
+                if st[0][-7:-2] == '*ICH*':
+                    st = find_surf_pos(st)
+                sbjs.append(st)
+        if len(sbjs) > 1:
+            misses[0] += 1
+            verify('Found multiple subjects of verb ' + verb[0] + ' in\n'
+                   + str(verb.root()) + '\n\nFound ' + str(sbjs))
+        else:
+            st = mark(sbjs[0], marking_paradigm[0])
+        if len(sbjs) == 0:
+            misses[0] += 1
+            verify('No subject of verb ' + verb[0] + ' found in ' +
+                   str(verb.root()) + '\n\nFound ' + str(sbjs))
+        del sbjs
+    # ## For the direct object of the verb, we'll search for direct objects in
+    # ## the subtree headed by the verb's sister.
+    if marking_paradigm[1] != '-':
+        dirobjs = []
+        # search for objects the verb c-commands
+        for st in verb.parent().subtrees():
+            if st.label()[:6] == 'NP-OB1' and same_domain(st, verb):
+                if st[0][-7:-2] == '*ICH*':
+                    st = find_surf_pos(st)
+                dirobjs.append(st)
+                if len(dirobjs) != 1:
+                    misses[1] += 1
+                    verify('Error finding unique direct object of verb ' + verb.label() +
+                           ' in\n' + str(verb.root()) + '\n\nFound' + str(dirobjs))
+                else:
+                    st = mark(st, marking_paradigm[1])
+        del dirobjs
+    # ## For indirect objects, look in the subtree headed by the verb's sister
+    # ## for OB2 and OB3 noun phrases
+    if marking_paradigm[2] != '-':
+        indobjs = []
+        for st in verb.parent().subtrees():
+            if (st.label()[:6] == 'NP-OB2' or st.label()[:6] == 'NP-OB3') and \
+                    same_domain(st, verb):
+                if st[0][-7:-2] == '*ICH*':
+                    st = find_surf_pos(st)
+                indobjs.append(st)
+                if len(indobjs) != 1:
+                    misses[2] += 1
+                    verify('Error finding unique direct object of verb ' + verb.label() +
+                           ' in\n' + str(verb.root()) + '\n\nFound' + str(indobjs))
+                else:
+                    st = mark(st, marking_paradigm[2])
+        del indobjs
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
     return tree
 
 # #####################################################################
@@ -646,6 +734,7 @@ while newline:
     ##########
 
     # ## STEP 1: Lexically marked case
+<<<<<<< HEAD
     for node in current_tree.subtrees():
         if is_verb(node):
             try:
@@ -656,6 +745,18 @@ while newline:
             except ValueError:
                 verify('Can\'t find dash char to find lemma of verb '
                        + node[0] + ' in tree\n' + str(node.root()))
+=======
+    # for node in current_tree.subtrees():
+    #     if is_verb(node):
+    #         try:
+    #             quirky_verb = node[0][node[0].index('-') + 1:]
+    #             if quirky_verb in LEXICON:
+    #                 current_tree = mark_args(node, LEXICON[quirky_verb])
+    #             del quirky_verb
+    #         except ValueError:
+    #             verify('Can\'t find dash char to find lemma of verb '
+    #                    + node[0] + ' in tree\n' + str(node.root()))
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
 
     # ## STEP 2: Dependent case
     # for node in current_tree.subtrees():
@@ -686,6 +787,10 @@ while newline:
     # ## STEP 4: Default
     # current_tree = mark_all(current_tree, 'N')
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
     # ####################################
     # ... and match the tree's cases against the corpus version and update
     # the total scores.
@@ -706,4 +811,8 @@ print()
 print('Number of failed attempts to mark arguments sbjs/dirobjs/indobjs', misses)
 # and the scorecard.
 pp_score(scorecard)
+<<<<<<< HEAD
 CORPUS.close()
+=======
+CORPUS.close()
+>>>>>>> f58505e4548d3422ee177fd1d6c5f0edd6cd1729
