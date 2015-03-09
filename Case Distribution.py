@@ -93,7 +93,8 @@ def spec_c_commands(a, b, sym):
 
 def is_noun(label):
     """
-    A Predicate to tell whether a given node in hte tree is a noun (case-markable).
+    A Predicate to tell whether a given node in the tree is a noun
+    and thus able to be marked with case.
     :param label: either a node or its label
     :return: Boolean
     """
@@ -251,8 +252,8 @@ def score_tree(corpus, test, existing=None):
     :param existing: the existing scorecard (if any) for (incorrect) case
     :return:
     """
-    # My convention is that the first letter is the corpus case; the second is the
-    # case marked by the algorithm.
+    # My convention is that the first letter is the corpus case; the second is
+    # the case marked by the algorithm.
     if existing is None:
         existing = {'NN': 0, 'NA': 0, 'ND': 0, 'NG': 0,
                     'AN': 0, 'AA': 0, 'AD': 0, 'AG': 0,
@@ -276,8 +277,8 @@ def print_counts(counts, source):
     print the confusion matrix for counts of case marked correctly and
     incorrectly from a counter/scorecard
     :param counts: an iterable containing all of the (in)correct case marks
-    :param source: a string describing the source/document where the marking took
-    place and where the counts were drawn from
+    :param source: a string describing the source/document where the marking
+    took place and where the counts were drawn from
     :return: none; prints out counts
     """
     print('Total counts for each case in ' + source + ': ' + str(counts))
@@ -291,13 +292,15 @@ def print_counts(counts, source):
         print('No counts in', counts, 'from', source)
 
 
-def pp_score(card, mat=True):
+def pp_score(card, mat=True, incl_unmarked=True):
     """
     prints the scorecard's results and percentages legibly
     :param card: a card consisting of two-letter counts corresponding to
     instances of (in)correct case marking
-    :param mat: a flag to toggle whether to print the card in matrix (T) or
-    list format
+    :param mat: toggle whether to print the card in matrix (True) or list
+    format
+    :param incl_unmarked: toggle whether to count unmarked nouns in the
+    calculation of the recall score, or just ones marked incorrectly
     :return: non; prints out results
     """
     right = 0
@@ -310,7 +313,8 @@ def pp_score(card, mat=True):
         spc = ''
         for i in range(ln):
             spc += ' '
-        print('\nCase assigned\nby algorithm:\t\tN\t\t\tA\t\t\tD\t\t\tG\t\t\t@')
+        print('\nCase assigned\nby algorithm:'
+              '\t\tN\t\t\tA\t\t\tD\t\t\tG\t\t\t@')
         print('Correct case: ', end='')
         for case in 'NADG':
             if case != 'N':
@@ -350,10 +354,10 @@ def pp_score(card, mat=True):
 
     print('\nSTATISTICS BY INDIVIDUAL CASE')
     for case in 'NADG':
-        # Note: in order to calculate stats for just attempted markings,
-        # remove the @ symbol from the string 'NADG@' in the next line.
-        # In order to include unmarked nouns as mistakes, make it 'NADG@'
-        relevant = float(sum([card[case + case2] for case2 in 'NADG@']))
+        cases = 'NADG'
+        if incl_unmarked:
+            cases += '@'
+        relevant = float(sum([card[case + case2] for case2 in cases]))
         selected = float(sum([card[case2 + case] for case2 in 'NADG']))
         correct = float(card[case + case])
         precision = correct/selected
@@ -369,7 +373,8 @@ def f_score(precision, recall, beta=1):
     """
     Calculate the f-score for a given beta (default =1) from the precision
     and recall values.
-    :param precision: value of precision (true positives over actual correct answers)
+    :param precision: value of precision (true positives over actual correct
+    answers)
     :param recall: value of recall (true positives over all selected answers)
     :param beta: weight of recall with respect to precision
     :return:
@@ -567,14 +572,15 @@ def mark_args(verb, case_frame):
                        str(verb.root()) + '\n\nFound ' + str(found))
             elif len(found) > 1:
                 misses[i][1] += 1
-                verify('Found multiple ' + str(arg_types[i][0]) + 's of verb ' +
-                       verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
+                verify('Found multiple ' + str(arg_types[i][0]) + 's of verb '
+                       + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
             elif len(found) == 1:
                 found[0] = mark(found[0], case_frame[i])
                 tree[found[0].treeposition()] = found[0]  # deep modification
             else:
-                print('Error with number of', str(arg_types[i][0]) + 's found:', found)
+                print('Error with number of', str(arg_types[i][0]) +
+                      's found:', found)
                 sys.exit(1)
 
     return tree
@@ -740,7 +746,8 @@ print_counts(corp_counts, 'corpus')
 print()
 print_counts(test_counts, 'test tree')
 print()
-print('Number of failed attempts to mark arguments sbjs/dirobjs/indobjs', misses)
+print('Number of failed attempts to mark arguments sbjs/dirobjs/indobjs',
+      misses)
 # ... and the scorecard.
-pp_score(scorecard)
+pp_score(scorecard, incl_unmarked=False)
 CORPUS.close()
