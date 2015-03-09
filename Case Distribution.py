@@ -8,7 +8,6 @@ Spring 2015"""
 
 __author__ = 'Miles Calabresi'
 
-
 import sys
 import os
 import re
@@ -17,7 +16,7 @@ import random
 from nltk.tree import ParentedTree
 
 
-misses = [[0,0], [0, 0], [0,0]]
+misses = [[0, 0], [0, 0], [0, 0]]
 ##############################################################################
 # My functions
 # NOTE: I use 'st' here to refer to all subtree variables;
@@ -341,6 +340,19 @@ def pp_score(card, mat=True):
           str(pct) + '%)')
 
 
+def f_score(precision, recall, beta=1):
+    """
+    Calculate the f-score for a given beta (default =1) from the precision
+    and recall values.
+    :param precision: value of precision (true positives over actual correct answers)
+    :param recall: value of recall (true positives over all selected answers)
+    :param beta: weight of recall with respect to precision
+    :return:
+    """
+    return (1 + beta * beta) * float(precision * recall) / \
+        float(beta * beta * precision + recall)
+
+
 def verify(msg=''):
     """
     Verify that it's okay to continue or quit; used to quit if a possible
@@ -518,7 +530,7 @@ def mark_args(verb, case_frame):
 
             for st in tree.subtrees():
                 if (st.label()[:6] == 'NP-' + str(arg_types[i][1]) or
-                    st.label()[:6] == 'NP-' + str(arg_types[i][2])) and \
+                   st.label()[:6] == 'NP-' + str(arg_types[i][2])) and \
                    cc_cond(st, verb) and same_domain(st, verb):
                     if st[0][-7:-2] == '*ICH*' or st[0][-5:-2] == '*T*':
                         st = find_surf_pos(st)
@@ -660,10 +672,10 @@ while newline:
     # ## STEP 2: Dependent case
     # for node in current_tree.subtrees():
     #     if is_noun(node) and is_unmarked(node):
-    #            for node2 in current_tree.subtrees():
-    #                if is_noun(node2) and is_unmarked(node) and node != node2 \
-    #                   and c_commands(node, node2) and same_domain(node, node2):
-    #                    node2 = mark(node2, 'A')
+    #         for node2 in current_tree.subtrees():
+    #             if is_noun(node2) and is_unmarked(node) and node != node2 \
+    #                and c_commands(node, node2) and same_domain(node, node2):
+    #                     node2 = mark(node2, 'A')
 
     # ## STEP 3: Unmarked case
     # for node in current_tree.subtrees():
@@ -698,12 +710,12 @@ while newline:
 # for item in sorted(iter(not_NP)):
 # print(item, '('+str(not_NP[item])+')')
 
-# Finally, print statistics from the tree
+# Finally, print statistics from the tree...
 print_stats(corp_counts, 'corpus')
 print()
 print_stats(test_counts, 'test tree')
 print()
 print('Number of failed attempts to mark arguments sbjs/dirobjs/indobjs', misses)
-# and the scorecard.
+# ... and the scorecard.
 pp_score(scorecard)
 CORPUS.close()
