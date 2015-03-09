@@ -271,23 +271,24 @@ def score_tree(corpus, test, existing=None):
     return existing
 
 
-def print_stats(counts, frm):
+def print_counts(counts, source):
     """
     print the confusion matrix for counts of case marked correctly and
     incorrectly from a counter/scorecard
     :param counts: an iterable containing all of the (in)correct case marks
-    :param frm: a string describing the source/document where the marking took
+    :param source: a string describing the source/document where the marking took
     place and where the counts were drawn from
     :return: none; prints out counts
     """
-    print('Total counts for each case in ' + frm + ': ' + str(counts))
+    print('Total counts for each case in ' + source + ': ' + str(counts))
     print('Frequencies:')
     if sum(counts.values()) > 0:
-        for item in [(key, str(round(100.0 * counts[key] / sum(counts.values()), 3)) + '%')
+        for item in [(key, str(round(100.0 * counts[key] /
+                     sum(counts.values()), 3)) + '%')
                      for key in counts.keys()]:
             print('\t', item)
     else:
-        print('No counts in', counts, 'from', frm)
+        print('No counts in', counts, 'from', source)
 
 
 def pp_score(card, mat=True):
@@ -300,7 +301,8 @@ def pp_score(card, mat=True):
     :return: non; prints out results
     """
     right = 0
-    wrong = 0
+    unmarked = 0
+    marked_wrong = 0
 
     # Confusion matrix version
     if mat:
@@ -323,21 +325,44 @@ def pp_score(card, mat=True):
     for item in sorted(iter(card)):
         if item[0] != item[1]:
             if not mat:
+                # Print simple list, not full matrix
                 print('Case ' + item[0] + ' mistaken for ' + item[1] +
                       ' by algorithm: ' + str(card[item]))
-            wrong += card[item]
+            if item[1] == '@':
+                unmarked += card[item]
+            else:
+                marked_wrong += card[item]
         else:
+            # Print simple list, not full matrix
             if not mat:
                 print('Case ' + item[0] + ' marked correctly: '
                       + str(card[item]))
             right += card[item]
-    if right == wrong == 0:
+    if right == marked_wrong == unmarked == 0:
         pct = 0.000
     else:
-        pct = round(100.0 * right / (wrong + right), 3)
-    print('Total wrong: ' + str(wrong))
-    print('Total correct: ' + str(right) + '\t(' +
-          str(pct) + '%)')
+        pct = round(100.0 * right / (unmarked + marked_wrong + right), 3)
+
+    print('Total marked correctly:', str(right), '\t(' + str(pct) + '%)')
+    print('Total left unmarked:', unmarked)
+    print('Total marked incorrectly:', marked_wrong)
+    print('Total wrong:', unmarked + marked_wrong)
+
+    print('\nSTATISTICS BY INDIVIDUAL CASE')
+    for case in 'NADG':
+        # Note: in order to calculate stats for just attempted markings,
+        # remove the @ symbol from the string 'NADG@' in the next line.
+        # In order to include unmarked nouns as mistakes, make it 'NADG@'
+        relevant = float(sum([card[case + case2] for case2 in 'NADG@']))
+        selected = float(sum([card[case2 + case] for case2 in 'NADG']))
+        correct = float(card[case + case])
+        precision = correct/selected
+        recall = correct/relevant
+        print('Case:', case)
+        print('\tPrecision:', str(round(100*precision, 3)) + '%')
+        print('\t   Recall:', str(round(100*recall, 3)) + '%')
+        print('\t  F-score:', str(round(100*f_score(precision, recall), 3))
+              + '%')
 
 
 def f_score(precision, recall, beta=1):
@@ -711,9 +736,9 @@ while newline:
 # print(item, '('+str(not_NP[item])+')')
 
 # Finally, print statistics from the tree...
-print_stats(corp_counts, 'corpus')
+print_counts(corp_counts, 'corpus')
 print()
-print_stats(test_counts, 'test tree')
+print_counts(test_counts, 'test tree')
 print()
 print('Number of failed attempts to mark arguments sbjs/dirobjs/indobjs', misses)
 # ... and the scorecard.
