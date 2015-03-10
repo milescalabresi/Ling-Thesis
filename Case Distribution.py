@@ -281,13 +281,13 @@ def print_counts(counts, source):
     took place and where the counts were drawn from
     :return: none; prints out counts
     """
-    print('Total counts for each case in ' + source + ': ' + str(counts))
+    print('Total counts for each case in', source + ':')
+    print('\t', counts)
     print('Frequencies:')
     if sum(counts.values()) > 0:
-        for item in [(key, str(round(100.0 * counts[key] /
-                     sum(counts.values()), 3)) + '%')
-                     for key in counts.keys()]:
-            print('\t', item)
+        for key in sorted(counts.keys(), key=lambda x: 'NADG@'.index(x)):
+            print('\t', (key, str(round(100.0 * counts[key] /
+                  sum(counts.values()), 3)) + '%'))
     else:
         print('No counts in', counts, 'from', source)
 
