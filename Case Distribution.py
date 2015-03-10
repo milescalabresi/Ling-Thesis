@@ -510,7 +510,7 @@ def same_domain(a, b):
     return not (crosses(a, lca, 'CP') or crosses(b, lca, 'CP'))
 
 
-def mark_args(verb, case_frame):
+def mark_args(verb, case_frame, correct_tree):
     """
     Take a lexical item (verb, and perhaps later preposition) and find the
     arguments (like subject, direct object complement) that it lexically
@@ -525,6 +525,8 @@ def mark_args(verb, case_frame):
     :param verb: a verb node in a tree
     :param case_frame: a three-letter string describing which case to
             mark each of the three arguments of the verb
+    :param correct_tree: the tree with the correct case markings, used
+    to keep track of where this function fails and succeeds
     """
     if len(case_frame) != 3:
         print('Error with lexical case frame', '"' + case_frame + '"')
@@ -567,18 +569,21 @@ def mark_args(verb, case_frame):
                     found.append(st)
 
             if len(found) == 0:
-                counts_by_function[i][1] += 1
+                counts_by_function[i][2] += 1
                 verify('No subject of verb ' + verb[0] + ' found in ' +
                        str(verb.root()) + '\n\nFound ' + str(found))
             elif len(found) > 1:
-                counts_by_function[i][2] += 1
+                counts_by_function[i][3] += 1
                 verify('Found multiple ' + str(arg_types[i][0]) + 's of verb '
                        + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
             elif len(found) == 1:
-                counts_by_function[i][0] += 1
                 found[0] = mark(found[0], case_frame[i])
                 tree[found[0].treeposition()] = found[0]  # deep modification
+                if correct_tree[found[0].treeposition()] == found[0]:
+                    counts_by_function[i][0] += 1
+                else:
+                    counts_by_function[i][1] += 1
             else:
                 print('Error with number of', str(arg_types[i][0]) +
                       's found:', found)
@@ -618,8 +623,10 @@ test_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0, '@': 0}
 
 # Each sub-list is for the roles subject, object, direct object
 # The three elements of a sub-list represent the number of nouns of the given
-# type that are marked correctly, left unmarked, and marked incorrectly.
-counts_by_function = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+# type that are marked correctly, marked incorrectly, left unmarked because
+# no candidate was found and left unmarked because more than one candidate
+# was found.
+counts_by_function = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
 
 # A dictionary to keep track of which lexical verbs succeed and fail most
 # often. Each key should be a string corresponding to a verb that lexically
@@ -705,7 +712,8 @@ while newline:
             try:
                 quirky_verb = node[0][node[0].index('-') + 1:]
                 if quirky_verb in LEXICON:
-                    current_tree = mark_args(node, LEXICON[quirky_verb])
+                    current_tree = mark_args(node, LEXICON[quirky_verb],
+                                             corpus_tree)
                     # Calculate which verbs succeed/fail most often.
                     if quirky_verb in lex_verbs:
                         lex_verbs[quirky_verb] += 1
@@ -758,8 +766,8 @@ print()
 print_counts(test_counts, 'test tree')
 print()
 # ... statistics on the lexically-marked words by function
-print('Number of attempts to mark arguments',
-      '[marked correctly, found none, marked incorrectly]')
+print('Number of attempts to mark arguments')
+print('[marked correctly, marked incorrectly, found none, found too many]')
 print('Subjects:', counts_by_function[0])
 print('Direct Objects:', counts_by_function[1])
 print('Indirect Objects:', counts_by_function[2])
