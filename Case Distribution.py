@@ -1,7 +1,8 @@
 # coding=utf-8
-"""This program seeks to evaluate the Case Dependency Algorithm and other
-theories of case distribution by testing them on the Icelandic Parsed
-Historical Corpus (https://linguist.is/icelandic_treebank/).
+"""This program seeks to evaluate a structure-based case realization algorithm
+by comparing it to other theories (and non-theories) of case distribution by
+testing them on the Icelandic Parsed Historical Corpus
+(https://linguist.is/icelandic_treebank/).
 Author: Miles Calabresi
 Project: Yale University Senior Thesis in Linguistics
 Spring 2015"""
@@ -16,7 +17,6 @@ import random
 from nltk.tree import ParentedTree
 
 
-misses = [[0, 0], [0, 0], [0, 0]]
 ##############################################################################
 # My functions
 # NOTE: I use 'st' here to refer to all subtree variables;
@@ -612,9 +612,12 @@ del newline
 lexfile.close()
 
 
-# not_NP = {}  # Intermediate test to find parents of N heads that are not NPs
 corp_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0}
 test_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0, '@': 0}
+# Each sub-list is for the roles subject, object, direct object
+# The two elements of a sub-list represent the number left unmarked
+# and the number  marked incorrectly
+misses = [[0, 0], [0, 0], [0, 0]]
 
 # The scorecard will keep track of case marked by the algorithm versus case
 # as marked in the corpus. The first letter is the corpus case; the second is
@@ -642,7 +645,7 @@ while newline:
     #####################################
     # ... and make a copy of the tree for later comparison. Count case
     # frequencies to update total count, and strip case from the test copy.
-    # !! NOTE: I use the character @ for an unmarked case slot.
+    # NOTE: I use the character @ for an unmarked case slot.
     #####################################
     corpus_tree = ParentedTree.fromstring(current_tree)
     corp_counts = count_case_freq(corpus_tree, corp_counts)
@@ -657,7 +660,7 @@ while newline:
     # ## (1b) "Random proportions" algorithm
     # current_tree = mark_random(current_tree, corp_counts)
 
-    # ## (1c) "Total randomness"
+    # ## (1c) "Total randomness" algorithm
     # current_tree = mark_random(current_tree)
 
     #######################################################
@@ -685,7 +688,7 @@ while newline:
                     node = mark(node, 'D')
 
     ##########
-    # ## (3) Case Dependency Algorithm
+    # ## (3) Structure-Based Algorithm
     ##########
 
     # ## STEP 1: Lexically marked case
@@ -747,7 +750,7 @@ print()
 print_counts(test_counts, 'test tree')
 print()
 print('Number of failed attempts to mark arguments sbjs/dirobjs/indobjs',
-      misses)
+      '(found none, marked incorrectly)\n', misses)
 # ... and the scorecard.
 pp_score(scorecard, incl_unmarked=False)
 CORPUS.close()
