@@ -567,15 +567,16 @@ def mark_args(verb, case_frame):
                     found.append(st)
 
             if len(found) == 0:
-                misses[i][0] += 1
+                counts_by_function[i][1] += 1
                 verify('No subject of verb ' + verb[0] + ' found in ' +
                        str(verb.root()) + '\n\nFound ' + str(found))
             elif len(found) > 1:
-                misses[i][1] += 1
+                counts_by_function[i][2] += 1
                 verify('Found multiple ' + str(arg_types[i][0]) + 's of verb '
                        + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
             elif len(found) == 1:
+                counts_by_function[i][0] += 1
                 found[0] = mark(found[0], case_frame[i])
                 tree[found[0].treeposition()] = found[0]  # deep modification
             else:
@@ -614,10 +615,17 @@ lexfile.close()
 
 corp_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0}
 test_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0, '@': 0}
+
 # Each sub-list is for the roles subject, object, direct object
-# The two elements of a sub-list represent the number left unmarked
-# and the number  marked incorrectly
-misses = [[0, 0], [0, 0], [0, 0]]
+# The three elements of a sub-list represent the number of nouns of the given
+# type that are marked correctly, left unmarked, and marked incorrectly.
+counts_by_function = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+
+# A dictionary to keep track of which lexical verbs succeed and fail most
+# often. Each key should be a string corresponding to a verb that lexically
+# marks case. Each value should be a pair corresponding to the number of times
+# that the verb marks an argument correctly and incorrectly.
+lex_verbs = {}
 
 # The scorecard will keep track of case marked by the algorithm versus case
 # as marked in the corpus. The first letter is the corpus case; the second is
@@ -698,7 +706,11 @@ while newline:
                 quirky_verb = node[0][node[0].index('-') + 1:]
                 if quirky_verb in LEXICON:
                     current_tree = mark_args(node, LEXICON[quirky_verb])
-                del quirky_verb
+                    # Calculate which verbs succeed/fail most often.
+                    if quirky_verb in lex_verbs:
+                        lex_verbs[quirky_verb] += 1
+                    else:
+                        lex_verbs[quirky_verb] = 1
             except ValueError:
                 verify('Can\'t find dash char to find lemma of verb '
                        + node[0] + ' in tree\n' + str(node.root()))
@@ -740,17 +752,17 @@ while newline:
     scorecard = score_tree(corpus_tree, current_tree, scorecard)
     #####################################
 
-# Intermediate test code: print the non-NP parents of N heads
-# for item in sorted(iter(not_NP)):
-# print(item, '('+str(not_NP[item])+')')
-
 # Finally, print statistics from the tree...
 print_counts(corp_counts, 'corpus')
 print()
 print_counts(test_counts, 'test tree')
 print()
-print('Number of failed attempts to mark arguments sbjs/dirobjs/indobjs',
-      '(found none, marked incorrectly)\n', misses)
+# ... statistics on the lexically-marked words by function
+print('Number of attempts to mark arguments',
+      '[marked correctly, found none, marked incorrectly]')
+print('Subjects:', counts_by_function[0])
+print('Direct Objects:', counts_by_function[1])
+print('Indirect Objects:', counts_by_function[2])
 # ... and the scorecard.
 pp_score(scorecard, incl_unmarked=False)
 CORPUS.close()
