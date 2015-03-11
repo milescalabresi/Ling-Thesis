@@ -281,8 +281,8 @@ def print_counts(counts, source):
     print('Frequencies:')
     if sum(counts.values()) > 0:
         for key in sorted(counts.keys(), key=lambda x: 'NADG@'.index(x)):
-            print('\t', (key, str(round(100.0 * counts[key] /
-                  sum(counts.values()), 3)) + '%'))
+            print('\t', (key, '{:.3%}'.format(counts[key] * 1. /
+                  sum(counts.values()))))
     else:
         print('No counts in', counts, 'from', source)
 
@@ -337,34 +337,33 @@ def pp_score(card, mat=True, incl_unmarked=True):
                 print('Case ' + item[0] + ' marked correctly: '
                       + str(card[item]))
             right += card[item]
-    if right == marked_wrong == 0:
+    if right == 0:  # for scenarios when wrong = 0
         pct = 0.000
     else:
         if incl_unmarked:
-            pct = round(100.0 * right / (unmarked + marked_wrong + right), 3)
+            pct = right * 1. / (unmarked + marked_wrong + right)
         else:
-            pct = round(100.0 * right / (marked_wrong + right), 3)
+            pct = right * 1. / (marked_wrong + right)
 
-    print('Total marked correctly:', str(right), '\t(' + str(pct) + '%)')
+    print('Total marked correctly:', str(right), '\t({:.3%})'.format(pct))
     print('Total left unmarked:', unmarked)
     print('Total marked incorrectly:', marked_wrong)
     print('Total wrong:', unmarked + marked_wrong)
 
     print('\nSTATISTICS BY INDIVIDUAL CASE')
+    cases = 'NADG'
+    if incl_unmarked:
+        cases += '@'
     for case in 'NADG':
-        cases = 'NADG'
-        if incl_unmarked:
-            cases += '@'
         relevant = float(sum([card[case + case2] for case2 in cases]))
         selected = float(sum([card[case2 + case] for case2 in 'NADG']))
         correct = float(card[case + case])
         precision = correct/selected
         recall = correct/relevant
         print('Case:', case)
-        print('\tPrecision:', str(round(100*precision, 3)) + '%')
-        print('\t   Recall:', str(round(100*recall, 3)) + '%')
-        print('\t  F-score:', str(round(100*f_score(precision, recall), 3))
-              + '%')
+        print('\tPrecision: {:.3%}'.format(precision))
+        print('\t   Recall: {:.3%}'.format(recall))
+        print('\t  F-score: {:.3%}'.format(f_score(precision, recall)))
 
 
 def f_score(precision, recall, beta=1):
@@ -805,8 +804,14 @@ print('\tIndirect Objects:', counts_by_function[2])
 pp_score(scorecard, incl_unmarked=False)
 
 # Print most successful and least successful lexical verbs.
-for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][1].values()),
+# Use the following key to sort by most frequently marking wrong case
+# key=lambda x: sum(lex_verbs[x][1].values())
+# Use this key to sort by most frequently failing to assign case
+# key=lambda x: sum(lex_verbs[x][2])
+print('Least successful quirky verbs:')
+for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][2]),
                  reverse=True):
-        print(vb, lex_verbs[vb], 'Total wrong:',
-              sum(lex_verbs[vb][1].values()))
+        print(vb, lex_verbs[vb],
+              'Total wrong:', sum(lex_verbs[vb][1].values()),
+              'Total unmarked:', sum(lex_verbs[vb][2]))
 CORPUS.close()
