@@ -561,11 +561,11 @@ def mark_args(verb, case_frame, correct_tree):
 
     tree = verb.root()
     arg_types = [['subject', 'SBJ', 'SBJ'],
-                 ['direct object', 'OB1', 'OB1'],
-                 ['indirect object', 'OB2', 'OB3']]
-    # For i = 2 (indirect objects), we need to check if it might OB3 or OB2
-    # For i < 2, we just check the first condition again (hence the redundant
-    # third item in the list.
+                 ['indirect object', 'OB2', 'OB3'],
+                 ['direct object', 'OB1', 'OB1']]
+    # For i = 1 (indirect objects), we need to check if it might OB3 or OB2
+    # For i = 0 or 2, we just check the first condition again (hence the
+    # redundant third item in those sub-lists.
 
     for i in range(len(case_frame)):
         if case_frame[i] != '-':
@@ -594,8 +594,9 @@ def mark_args(verb, case_frame, correct_tree):
             if len(found) == 0:
                 counts_by_function[i][2] += 1
                 lex_verbs[verb_lemma][2][0] += 1
-                verify('No subject of verb ' + verb[0] + ' found in ' +
-                       str(verb.root()) + '\n\nFound ' + str(found))
+                verify('No ' + arg_types[i][0] + ' of verb ' + verb[0] +
+                       ' found in ' + str(verb.root()) + '\n\nFound ' +
+                       str(found))
             elif len(found) > 1:
                 counts_by_function[i][3] += 1
                 lex_verbs[verb_lemma][2][1] += 1
@@ -603,21 +604,27 @@ def mark_args(verb, case_frame, correct_tree):
                        + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
             elif len(found) == 1:
-                found[0] = mark(find_head(found[0]), case_frame[i])
-                tree[found[0].treeposition()] = found[0]  # deep modification
-                if correct_tree[found[0].treeposition()] == found[0]:
-                    counts_by_function[i][0] += 1
-                    # Count which verbs succeed most often.
-                    lex_verbs[verb_lemma][0] += 1
+                if is_unmarked(find_head(found[0])):
+                    found[0] = mark(find_head(found[0]), case_frame[i])
+                    # make sure to do deep modification
+                    tree[found[0].treeposition()] = found[0]
+                    if correct_tree[found[0].treeposition()] == found[0]:
+                        counts_by_function[i][0] += 1
+                        # Count which verbs succeed most often.
+                        lex_verbs[verb_lemma][0] += 1
+                    else:
+                        counts_by_function[i][1] += 1
+                        # Verbs that fail most often
+                        corr_case = find_head(
+                            correct_tree[found[0].treeposition()]).label()[-1]
+                        try:
+                            lex_verbs[verb_lemma][1][corr_case] += 1
+                        except KeyError:
+                            verify('Bad noun marked: ' + str(found[0]))
                 else:
-                    counts_by_function[i][1] += 1
-                    # Verbs that fail most often
-                    corr_case = find_head(
-                        correct_tree[found[0].treeposition()]).label()[-1]
-                    try:
-                        lex_verbs[verb_lemma][1][corr_case] += 1
-                    except KeyError:
-                        verify('Bad noun marked: ' + str(found[0]))
+                    verify('We already marked this noun, but it appears to be'
+                           + ' the ' + arg_types[i][0] + verb + ' in '
+                           + verb.root())
             else:
                 print('Error with number of', str(arg_types[i][0]) +
                       's found:', found)
@@ -655,7 +662,7 @@ lexfile.close()
 corp_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0}
 test_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0, '@': 0}
 
-# Each sub-list is for the roles subject, object, direct object
+# Each sub-list is for the roles subject, indirect object, and direct object.
 # The three elements of a sub-list represent the number of nouns of the given
 # type that are marked correctly, marked incorrectly, left unmarked because
 # no candidate was found and left unmarked because more than one candidate
@@ -744,6 +751,7 @@ while newline:
     for node in current_tree.subtrees():
         if is_verb(node):
             try:
+                # extract the lemma of the verb from the tree node
                 quirky_verb = node[0][node[0].index('-') + 1:]
                 if quirky_verb in LEXICON:
                     current_tree = mark_args(node, LEXICON[quirky_verb],
@@ -798,8 +806,8 @@ print()
 print('Number of attempts to mark arguments of quirky verbs, formatted as')
 print('[marked correctly, marked incorrectly, found none, found too many]')
 print('\t        Subjects:', counts_by_function[0])
-print('\t  Direct Objects:', counts_by_function[1])
-print('\tIndirect Objects:', counts_by_function[2])
+print('\tIndirect Objects:', counts_by_function[1])
+print('\t  Direct Objects:', counts_by_function[2])
 # ... and the scorecard.
 pp_score(scorecard, incl_unmarked=False)
 
