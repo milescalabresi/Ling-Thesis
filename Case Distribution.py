@@ -282,7 +282,7 @@ def print_counts(counts, source):
     if sum(counts.values()) > 0:
         for key in sorted(counts.keys(), key=lambda x: 'NADG@'.index(x)):
             print('\t', (key, '{:.3%}'.format(counts[key] * 1. /
-                  sum(counts.values()))))
+                                              sum(counts.values()))))
     else:
         print('No counts in', counts, 'from', source)
 
@@ -359,11 +359,11 @@ def pp_score(card, mat=True, incl_unmarked=True):
         selected = float(sum([card[case2 + case] for case2 in 'NADG']))
         correct = float(card[case + case])
         if selected > 0:
-            precision = correct/selected
+            precision = correct / selected
         else:
             precision = 0
         if relevant > 0:
-            recall = correct/relevant
+            recall = correct / relevant
         else:
             recall = 0
         print('Case:', case)
@@ -583,17 +583,19 @@ def mark_args(verb, case_frame, correct_tree):
 
             for st in tree.subtrees():
                 if (st.label()[:6] == 'NP-' + str(arg_types[i][1]) or
-                   st.label()[:6] == 'NP-' + str(arg_types[i][2])) and \
-                   cc_cond(st, verb) and same_domain(st, verb):
+                        st.label()[:6] == 'NP-' + str(arg_types[i][2])) and \
+                        cc_cond(st, verb) and same_domain(st, verb):
                     if st[0][-7:-2] == '*ICH*' or st[0][-5:-2] == '*T*':
                         st = find_surf_pos(st)
                     found.append(st)
 
             # Now keep statistics of whether each verb's arguments
             # were found and marked correctly or incorrectly.
-            verb_lemma = verb[0][verb[0].index('-') + 1:] + ':' \
-                + str(i+1) + '-' + case_frame[i]
+            verb_lemma = verb[0][verb[0].index('-') + 1:] + ':' + str(i + 1) +\
+                '-' + case_frame[i]
             if verb_lemma not in lex_verbs:
+                # Format: [correct, {Counts for what it should have been},
+                # [found none, found too many] ]
                 lex_verbs[verb_lemma] = [0, {'N': 0, 'A': 0, 'D': 0, 'G': 0},
                                          [0, 0]]
 
@@ -610,27 +612,43 @@ def mark_args(verb, case_frame, correct_tree):
                        + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
             elif len(found) == 1:
-                if is_unmarked(find_head(found[0])):
-                    found[0] = mark(find_head(found[0]), case_frame[i])
-                    # make sure to do deep modification
-                    tree[found[0].treeposition()] = found[0]
-                    if correct_tree[found[0].treeposition()] == found[0]:
-                        counts_by_function[i][0] += 1
-                        # Count which verbs succeed most often.
-                        lex_verbs[verb_lemma][0] += 1
+                if is_noun(find_head(found[0])):
+                    if is_unmarked(find_head(found[0])):
+                        # mark the noun
+                        found[0] = mark(find_head(found[0]), case_frame[i])
+                        # make sure to do deep modification
+                        tree[found[0].treeposition()] = found[0]
+                        # see if it's correct, and keep stats accordingly
+                        if correct_tree[found[0].treeposition()] == found[0]:
+                            counts_by_function[i][0] += 1
+                            # Count which verbs succeed most often.
+                            lex_verbs[verb_lemma][0] += 1
+                        else:
+                            # Verify it's just the case that's wrong.
+                            assert correct_tree[
+                                found[0].treeposition()].label()[:-1] \
+                                == found[0].label()[:-1]
+                            # Keep track of verbs that fail most often
+                            corr_case = correct_tree[
+                                found[0].treeposition()].label()[-1]
+                            try:
+                                counts_by_function[i][1] += 1
+                                lex_verbs[verb_lemma][1][corr_case] += 1
+                            except KeyError:
+                                verify('Bad noun marked: ' + str(found[0]))
                     else:
-                        counts_by_function[i][1] += 1
-                        # Verbs that fail most often
-                        corr_case = find_head(
-                            correct_tree[found[0].treeposition()]).label()[-1]
-                        try:
-                            lex_verbs[verb_lemma][1][corr_case] += 1
-                        except KeyError:
-                            verify('Bad noun marked: ' + str(found[0]))
+                        # Found a noun, but it's already been marked
+                        verify('We already marked the noun ' + str(found[0]) +
+                               ', but it appears to be the ' + arg_types[i][0]
+                               + ' of ' + str(verb) + ' in\n' +
+                               str(verb.root()))
                 else:
-                    verify('We already marked this noun, but it appears to be'
-                           + ' the ' + arg_types[i][0] + str(verb) + ' in '
-                           + str(verb.root()))
+                    # Failed to find an N head of the NP we found
+                    counts_by_function[i][2] += 1
+                    lex_verbs[verb_lemma][2][0] += 1
+                    verify('Found NP ' + str(found[0]) + ' in ' +
+                           str(verb.root()) + 'is not a noun. (looking for ' +
+                           arg_types[i][0] + ' of verb ' + verb[0])
             else:
                 print('Error with number of', str(arg_types[i][0]) +
                       's found:', found)
@@ -663,7 +681,6 @@ while newline:
     newline = lexfile.readline()
 del newline
 lexfile.close()
-
 
 corp_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0}
 test_counts = {'N': 0, 'A': 0, 'D': 0, 'G': 0, '@': 0}
@@ -768,8 +785,8 @@ while newline:
 
     # ## STEP 2: Dependent case
     # for node in current_tree.subtrees():
-    #     if is_noun(node) and is_unmarked(node):
-    #         for node2 in current_tree.subtrees():
+    # if is_noun(node) and is_unmarked(node):
+    # for node2 in current_tree.subtrees():
     #             if is_noun(node2) and is_unmarked(node) and node != node2 \
     #                and c_commands(node, node2) and same_domain(node, node2):
     #                     node2 = mark(node2, 'A')
@@ -822,10 +839,13 @@ pp_score(scorecard, incl_unmarked=False)
 # key=lambda x: sum(lex_verbs[x][1].values())
 # Use this key to sort by most frequently failing to assign case
 # key=lambda x: sum(lex_verbs[x][2])
+# Set the reverse key to True/False to see least/most successful, resp.
 print('Least successful quirky verbs:')
 for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][1].values()),
                  reverse=True):
-        print(vb, lex_verbs[vb],
-              'Total wrong:', sum(lex_verbs[vb][1].values()),
-              'Total unmarked:', sum(lex_verbs[vb][2]))
+    print(vb, lex_verbs[vb],
+          'Marked wrong:', sum(lex_verbs[vb][1].values()),
+          'Unmarked:', sum(lex_verbs[vb][2]))
+print('   Total wrong:', sum(sum(lex_verbs[v][1].values()) for v in lex_verbs.keys()))
+print('Total unmarked:', sum(sum(lex_verbs[v][2]) for v in lex_verbs.keys()))
 CORPUS.close()
