@@ -358,8 +358,14 @@ def pp_score(card, mat=True, incl_unmarked=True):
         relevant = float(sum([card[case + case2] for case2 in cases]))
         selected = float(sum([card[case2 + case] for case2 in 'NADG']))
         correct = float(card[case + case])
-        precision = correct/selected
-        recall = correct/relevant
+        if selected > 0:
+            precision = correct/selected
+        else:
+            precision = 0
+        if relevant > 0:
+            recall = correct/relevant
+        else:
+            recall = 0
         print('Case:', case)
         print('\tPrecision: {:.3%}'.format(precision))
         print('\t   Recall: {:.3%}'.format(recall))
@@ -623,8 +629,8 @@ def mark_args(verb, case_frame, correct_tree):
                             verify('Bad noun marked: ' + str(found[0]))
                 else:
                     verify('We already marked this noun, but it appears to be'
-                           + ' the ' + arg_types[i][0] + verb + ' in '
-                           + verb.root())
+                           + ' the ' + arg_types[i][0] + str(verb) + ' in '
+                           + str(verb.root()))
             else:
                 print('Error with number of', str(arg_types[i][0]) +
                       's found:', found)
@@ -817,7 +823,7 @@ pp_score(scorecard, incl_unmarked=False)
 # Use this key to sort by most frequently failing to assign case
 # key=lambda x: sum(lex_verbs[x][2])
 print('Least successful quirky verbs:')
-for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][2]),
+for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][1].values()),
                  reverse=True):
         print(vb, lex_verbs[vb],
               'Total wrong:', sum(lex_verbs[vb][1].values()),
