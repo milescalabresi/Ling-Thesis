@@ -382,8 +382,11 @@ def f_score(precision, recall, beta=1):
     :param beta: weight of recall with respect to precision
     :return:
     """
-    return (1 + beta * beta) * float(precision * recall) / \
-        float(beta * beta * precision + recall)
+    if precision + recall == 0:
+        return 0
+    else:
+        return (1 + beta * beta) * float(precision * recall) / \
+            float(beta * beta * precision + recall)
 
 
 def verify(msg=''):
@@ -612,30 +615,35 @@ def mark_args(verb, case_frame, correct_tree):
                        + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
             elif len(found) == 1:
-                if is_noun(find_head(found[0])):
-                    if is_unmarked(find_head(found[0])):
-                        # mark the noun
-                        found[0] = mark(find_head(found[0]), case_frame[i])
-                        # make sure to do deep modification
-                        tree[found[0].treeposition()] = found[0]
+                # Switch to the head of the NP we found, if it's there (if it's
+                # not, then the first is_noun will catch it).
+                arg = find_head(found[0])
+                if is_noun(arg):
+                    if is_unmarked(arg):
                         # see if it's correct, and keep stats accordingly
-                        if correct_tree[found[0].treeposition()] == found[0]:
+                        if correct_tree[arg.treeposition()].label()[-1]\
+                                == case_frame[i]:
+                            # mark the noun
+                            arg = mark(arg, case_frame[i])
+                            # make sure to do deep modification
+                            tree[arg.treeposition()] = arg
                             counts_by_function[i][0] += 1
                             # Count which verbs succeed most often.
                             lex_verbs[verb_lemma][0] += 1
                         else:
-                            # Verify it's just the case that's wrong.
+                            # Lexically specified case is not correct.
+                            # First, verify it's just the case that's wrong.
                             assert correct_tree[
-                                found[0].treeposition()].label()[:-1] \
-                                == found[0].label()[:-1]
-                            # Keep track of verbs that fail most often
+                                arg.treeposition()].label()[:-1] \
+                                == arg.label()[:-1]
+                            # Keep track of verbs that fail most often.
                             corr_case = correct_tree[
-                                found[0].treeposition()].label()[-1]
+                                arg.treeposition()].label()[-1]
                             try:
                                 counts_by_function[i][1] += 1
                                 lex_verbs[verb_lemma][1][corr_case] += 1
                             except KeyError:
-                                verify('Bad noun marked: ' + str(found[0]))
+                                verify('Bad noun marked: ' + str(arg))
                     else:
                         # Found a noun, but it's already been marked
                         verify('We already marked the noun ' + str(found[0]) +
@@ -827,10 +835,19 @@ print_counts(test_counts, 'trees marked by algorithm')
 print()
 # ... statistics on the lexically-marked words by function
 print('Number of attempts to mark arguments of quirky verbs, formatted as')
-print('[marked correctly, marked incorrectly, found none, found too many]')
-print('\t        Subjects:', counts_by_function[0])
-print('\tIndirect Objects:', counts_by_function[1])
-print('\t  Direct Objects:', counts_by_function[2])
+print('[marked correctly, incorrect in lexicon, found none,',
+      'found too many, total attempts]')
+print('\t        Subjects:', counts_by_function[0], sum(counts_by_function[0]))
+print('\tIndirect Objects:', counts_by_function[1], sum(counts_by_function[1]))
+print('\t  Direct Objects:', counts_by_function[2], sum(counts_by_function[2]))
+# Calculate totals
+function_totals = [0, 0, 0, 0]
+for j in range(len(counts_by_function)):
+    for k in range(len(counts_by_function[j])):
+        function_totals[k] += counts_by_function[j][k]
+print('\t          Totals:', [sum(counts_by_function[i][j]
+                                  for i in range(len(counts_by_function)))
+                              for j in range(len(counts_by_function[0]))])
 # ... and the scorecard.
 pp_score(scorecard, incl_unmarked=False)
 
@@ -846,6 +863,7 @@ for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][1].values()),
     print(vb, lex_verbs[vb],
           'Marked wrong:', sum(lex_verbs[vb][1].values()),
           'Unmarked:', sum(lex_verbs[vb][2]))
-print('   Total wrong:', sum(sum(lex_verbs[v][1].values()) for v in lex_verbs.keys()))
+print('   Total wrong:', sum(sum(lex_verbs[v][1].values())
+                             for v in lex_verbs.keys()))
 print('Total unmarked:', sum(sum(lex_verbs[v][2]) for v in lex_verbs.keys()))
 CORPUS.close()
