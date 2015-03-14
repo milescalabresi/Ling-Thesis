@@ -553,7 +553,8 @@ def mark_args(verb, case_frame, correct_tree):
     to keep track of where this function fails and succeeds
     """
     if len(case_frame) != 3:
-        print('Error with lexical case frame', '"' + case_frame + '"')
+        print('Error with lexical case frame', '"' + case_frame + '" of',
+              verb, 'in\n', verb.root())
         sys.exit(1)
 
     if not is_verb(verb):
@@ -686,8 +687,9 @@ LEXICON = {}
 lexfile = open('lexcasemarkers.txt', encoding='utf-8')
 newline = lexfile.readline()
 while newline:
+    newline = newline.replace(' ', '').strip()
     LEXICON[newline[:newline.index(':')]] =\
-        newline[newline.index(': ') + 2:-1].split(', ')
+        newline[newline.index(':') + 1:].split(',')
     newline = lexfile.readline()
 del newline
 lexfile.close()
