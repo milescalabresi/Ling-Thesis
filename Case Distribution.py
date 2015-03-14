@@ -555,6 +555,7 @@ def mark_args(verb, case_frame, correct_tree):
     if len(case_frame) != 3:
         print('Error with lexical case frame', '"' + case_frame + '"')
         sys.exit(1)
+
     if not is_verb(verb):
         print('Error in mark_args function:', verb, 'is not a verb.')
         sys.exit(1)
@@ -680,12 +681,13 @@ except OSError:
     print('File not found.')
     sys.exit(1)
 
-# Build the lexicon from the csv file of verbs and prepositions
+# Build the lexicon from the text file of verbs and prepositions
 LEXICON = {}
 lexfile = open('lexcasemarkers.txt', encoding='utf-8')
 newline = lexfile.readline()
 while newline:
-    LEXICON[newline[:newline.index(':')]] = newline[newline.index(': ') + 2:-1]
+    LEXICON[newline[:newline.index(':')]] =\
+        newline[newline.index(': ') + 2:-1].split(', ')
     newline = lexfile.readline()
 del newline
 lexfile.close()
@@ -785,8 +787,21 @@ while newline:
                 # extract the lemma of the verb from the tree node
                 quirky_verb = node[0][node[0].index('-') + 1:]
                 if quirky_verb in LEXICON:
-                    current_tree = mark_args(node, LEXICON[quirky_verb],
+                    new_tree = mark_args(node, LEXICON[quirky_verb][0],
+                                         corpus_tree)
+                    # If there are multiple case frames and the first
+                    # didn't change anything, then try the second.
+                    # NOTE: this code is only executed if the first has
+                    # no effect. If the first has an effect, the second won't
+                    # be tested, even if the second specifies a different
+                    # argument from the first.
+                    if current_tree == new_tree and \
+                       len(LEXICON[quirky_verb]) > 1:
+                        new_tree = mark_args(node, LEXICON[quirky_verb][1],
                                              corpus_tree)
+                    # Make the changes from mark_args
+                    current_tree = new_tree
+
             except ValueError:
                 verify('Can\'t find dash char to find lemma of verb '
                        + node[0] + ' in tree\n' + str(node.root()))
