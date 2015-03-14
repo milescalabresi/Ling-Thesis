@@ -338,14 +338,14 @@ def pp_score(card, mat=True, incl_unmarked=True):
                       + str(card[item]))
             right += card[item]
     if right == 0:  # for scenarios when wrong = 0
-        pct = 0.000
+        # First excludes unmarked nouns, second includes them
+        pct = [0.000, 0.000]
     else:
-        if incl_unmarked:
-            pct = right * 1. / (unmarked + marked_wrong + right)
-        else:
-            pct = right * 1. / (marked_wrong + right)
+            pct = [right * 1. / (marked_wrong + right),
+                   right * 1. / (unmarked + marked_wrong + right)]
 
-    print('Total marked correctly:', str(right), '\t({:.3%})'.format(pct))
+    print('Total marked correctly:', str(right),
+          '\t({:.3%}; {:.3%})'.format(pct[0], pct[1]))
     print('Total left unmarked:', unmarked)
     print('Total marked incorrectly:', marked_wrong)
     print('Total wrong:', unmarked + marked_wrong)
@@ -835,20 +835,18 @@ print_counts(test_counts, 'trees marked by algorithm')
 print()
 # ... statistics on the lexically-marked words by function
 print('Number of attempts to mark arguments of quirky verbs, formatted as')
-print('[marked correctly, incorrect in lexicon, found none,',
+print('[marked correctly, found but incorrect in lexicon, found none,',
       'found too many, total attempts]')
-print('\t        Subjects:', counts_by_function[0], sum(counts_by_function[0]))
-print('\tIndirect Objects:', counts_by_function[1], sum(counts_by_function[1]))
-print('\t  Direct Objects:', counts_by_function[2], sum(counts_by_function[2]))
-# Calculate totals
-function_totals = [0, 0, 0, 0]
-for j in range(len(counts_by_function)):
-    for k in range(len(counts_by_function[j])):
-        function_totals[k] += counts_by_function[j][k]
-print('\t          Totals:', [sum(counts_by_function[i][j]
-                                  for i in range(len(counts_by_function)))
-                              for j in range(len(counts_by_function[0]))])
-# ... and the scorecard.
+for i in range(len(counts_by_function)):
+    counts_by_function[i] += [sum(counts_by_function[i])]
+print('\t   Subjects:', counts_by_function[0])
+print('\tInd Objects:', counts_by_function[1])
+print('\tDir Objects:', counts_by_function[2])
+print('\t     Totals:', [sum(counts_by_function[i][j]
+                             for i in range(len(counts_by_function)))
+                         for j in range(len(counts_by_function[0]))])
+# ... and the scorecard (incl_unmarked includes unmarked nouns in calculation
+# of precision, recall, and f-score).
 pp_score(scorecard, incl_unmarked=False)
 
 # Print most successful and least successful lexical verbs.
