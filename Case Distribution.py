@@ -808,32 +808,41 @@ while newline:
                 verify('Can\'t find dash char to find lemma of verb '
                        + node[0] + ' in tree\n' + str(node.root()))
 
+    # For efficiency, keep track of all unmarked nouns instead of searching
+    # the tree at each step.
+    unmarked_nouns = []
+    for node in current_tree.subtrees():
+        if is_noun(node) and is_unmarked(node):
+            unmarked_nouns.append(node)
+
     # ## STEP 2: Dependent case
-    # for node in current_tree.subtrees():
-    # if is_noun(node) and is_unmarked(node):
-    # for node2 in current_tree.subtrees():
-    #             if is_noun(node2) and is_unmarked(node) and node != node2 \
-    #                and c_commands(node, node2) and same_domain(node, node2):
-    #                     node2 = mark(node2, 'A')
+    # for node in unmarked_nouns[:]:
+    #     for node2 in unmarked_nouns[:]:
+    #         if node != node2 and c_commands(node, node2) and \
+    #            same_domain(node, node2):
+    #             unmarked_nouns.remove(node2)
+    #             current_tree[node2.treeposition()] = mark(node2, 'A')
 
     # ## STEP 3: Unmarked case
-    # for node in current_tree.subtrees():
-    #     if is_noun(node) and is_unmarked(node):
-    #         par = node.parent()
-    #         while par is not None:
-    #             if par.label()[:2] == 'CP':
-    #                 node = mark(node, 'N')
-    #                 break
-    #             elif par.label()[:2] == 'PP':
-    #                 node = mark(node, 'D')
-    #                 break
-    #             #elif par.label()[:2] == 'NP':
-    #             #    node = mark(node, 'G')
-    #             #    break
-    #             else:
-    #                 par = par.parent()
-    #         del par
+    # for node in unmarked_nouns[:]:
+    #     par = node.parent()
+    #     while par is not None:
+    #         if par.label()[:2] == 'CP':
+    #             unmarked_nouns.remove(node)
+    #             current_tree[node.treeposition()] = mark(node, 'N')
+    #             break
+    #         elif par.label()[:2] == 'PP':
+    #             unmarked_nouns.remove(node)
+    #             current_tree[node.treeposition()] = mark(node, 'D')
+    #             break
+    #         #elif par.label()[:2] == 'NP':
+    #         #    unmarked_nouns.remove(node)
+    #         #    current_tree[node.treeposition()] = mark(node, 'G')
+    #         else:
+    #             par = par.parent()
+    #     del par
 
+    # assert unmarked_nouns == []
     # ## STEP 4: Default
     # current_tree = mark_all(current_tree, 'N')
 
