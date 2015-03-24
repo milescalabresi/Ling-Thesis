@@ -808,8 +808,8 @@ while newline:
                 verify('Can\'t find dash char to find lemma of verb '
                        + node[0] + ' in tree\n' + str(node.root()))
 
-    # For efficiency, keep track of all unmarked nouns instead of searching
-    # the tree at each step.
+    # ## For efficiency, keep track of all unmarked nouns instead of searching
+    # ## the whole tree at each of the following steps.
     unmarked_nouns = []
     for node in current_tree.subtrees():
         if is_noun(node) and is_unmarked(node):
@@ -820,6 +820,7 @@ while newline:
     #     for node2 in unmarked_nouns[:]:
     #         if node != node2 and c_commands(node, node2) and \
     #            same_domain(node, node2):
+    #             print(node2, current_tree)
     #             unmarked_nouns.remove(node2)
     #             current_tree[node2.treeposition()] = mark(node2, 'A')
 
@@ -835,9 +836,9 @@ while newline:
     #             unmarked_nouns.remove(node)
     #             current_tree[node.treeposition()] = mark(node, 'D')
     #             break
-    #         #elif par.label()[:2] == 'NP':
-    #         #    unmarked_nouns.remove(node)
-    #         #    current_tree[node.treeposition()] = mark(node, 'G')
+    #         elif par.label()[:6] == 'NP-POS':
+    #             unmarked_nouns.remove(node)
+    #             current_tree[node.treeposition()] = mark(node, 'G')
     #         else:
     #             par = par.parent()
     #     del par
