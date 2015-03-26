@@ -783,30 +783,39 @@ while newline:
     ##########
 
     # ## STEP 1: Lexically marked case
-    for node in current_tree.subtrees():
-        if is_verb(node):
-            try:
-                # extract the lemma of the verb from the tree node
-                quirky_verb = node[0][node[0].index('-') + 1:]
-                if quirky_verb in LEXICON:
-                    new_tree = mark_args(node, LEXICON[quirky_verb][0],
-                                         corpus_tree)
-                    # If there are multiple case frames and the first
-                    # didn't change anything, then try the second.
-                    # NOTE: this code is only executed if the first has
-                    # no effect. If the first has an effect, the second won't
-                    # be tested, even if the second specifies a different
-                    # argument from the first.
-                    if current_tree == new_tree and \
-                       len(LEXICON[quirky_verb]) > 1:
-                        new_tree = mark_args(node, LEXICON[quirky_verb][1],
-                                             corpus_tree)
-                    # Make the changes from mark_args
-                    current_tree = new_tree
+    # for node in current_tree.subtrees():
+    #     if is_verb(node):
+    #         try:
+    #             # extract the lemma of the verb from the tree node
+    #             quirky_verb = node[0][node[0].index('-') + 1:]
+    #             if quirky_verb in LEXICON:
+    #                 new_tree = mark_args(node, LEXICON[quirky_verb][0],
+    #                                      corpus_tree)
+    #                 # If there are multiple case frames and the first
+    #                 # didn't change anything, then try the second.
+    #                 # NOTE: this code is only executed if the first has
+    #                 # no effect. If the first has an effect, the second won't
+    #                 # be tested, even if the second specifies a different
+    #                 # argument from the first.
+    #                 if current_tree == new_tree and \
+    #                    len(LEXICON[quirky_verb]) > 1:
+    #                     new_tree = mark_args(node, LEXICON[quirky_verb][1],
+    #                                          corpus_tree)
+    #                 # Make the changes from mark_args
+    #                 current_tree = new_tree
+    #
+    #         except ValueError:
+    #             verify('Can\'t find dash char to find lemma of verb '
+    #                    + node[0] + ' in tree\n' + str(node.root()))
 
-            except ValueError:
-                verify('Can\'t find dash char to find lemma of verb '
-                       + node[0] + ' in tree\n' + str(node.root()))
+    # for node in current_tree.subtrees():
+    #     if node.label()[:2] == 'NP':
+    #         for child in node:
+    #             for child2 in node:
+    #                 if child != child2 and child.label()[:2] == 'NP' and child2.label()[:2] == 'NP':
+    #                     print('\n', node.label())
+    #                     for c in node:
+    #                         print('\t', c.label(), end='\t')
 
     # ## For efficiency, keep track of all unmarked nouns instead of searching
     # ## the whole tree at each of the following steps.
@@ -820,7 +829,6 @@ while newline:
     #     for node2 in unmarked_nouns[:]:
     #         if node != node2 and c_commands(node, node2) and \
     #            same_domain(node, node2):
-    #             print(node2, current_tree)
     #             unmarked_nouns.remove(node2)
     #             current_tree[node2.treeposition()] = mark(node2, 'A')
 
@@ -839,11 +847,10 @@ while newline:
     #         elif par.label()[:6] == 'NP-POS':
     #             unmarked_nouns.remove(node)
     #             current_tree[node.treeposition()] = mark(node, 'G')
+    #             break
     #         else:
     #             par = par.parent()
-    #     del par
 
-    # assert unmarked_nouns == []
     # ## STEP 4: Default
     # current_tree = mark_all(current_tree, 'N')
 
@@ -887,8 +894,8 @@ for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][1].values()),
                  reverse=True):
     print(vb, lex_verbs[vb],
           'Marked wrong:', sum(lex_verbs[vb][1].values()),
-          'Unmarked:', sum(lex_verbs[vb][2]))
-print('   Total wrong:', sum(sum(lex_verbs[v][1].values())
+          '    Unmarked:', sum(lex_verbs[vb][2]))
+print('     Total wrong:', sum(sum(lex_verbs[v][1].values())
                              for v in lex_verbs.keys()))
 print('Total unmarked:', sum(sum(lex_verbs[v][2]) for v in lex_verbs.keys()))
 CORPUS.close()
