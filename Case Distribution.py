@@ -620,7 +620,9 @@ def mark_args(verb, case_frame, correct_tree):
                 verify('Found multiple ' + str(arg_types[i][0]) + 's of verb '
                        + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
-            elif len(found) == 1:
+                # If verify passes, then just use the leftmost child
+                found = list(found[0])
+            if len(found) == 1:
                 # Switch to the head of the NP we found, if it's there (if it's
                 # not, then the first is_noun will catch it).
                 arg = find_head(found[0])
@@ -679,7 +681,7 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [True, False, False, False]
+sba_steps = [True, True, True, False]
 safe_mode = False
 
 try:
@@ -855,7 +857,7 @@ while newline:
         for node in unmarked_nouns[:]:
             par = node.parent()
             while par is not None:
-                if par.label()[:2] == 'CP':
+                if par.label()[:2] == 'CP' or par.label()[:2] == 'IP':
                     unmarked_nouns.remove(node)
                     current_tree[node.treeposition()] = mark(node, 'N')
                     break
