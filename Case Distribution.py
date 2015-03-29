@@ -457,6 +457,9 @@ def find_head(np):
     for child in np:
         if is_noun(child):
             return child
+    for child in np:
+        if not isinstance(child, str) and re.match('W?NP', child.label()[:3]):
+            return find_head(child)
     verify('No N head child of NP ' + str(np))
     return np
 
@@ -676,7 +679,7 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [False, False, False, False]
+sba_steps = [True, False, False, False]
 safe_mode = False
 
 try:
