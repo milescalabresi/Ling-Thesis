@@ -146,7 +146,7 @@ def find_base_pos(word):
     assert re.match('-\d', num)
     found = []
     for st in word.root():
-        if st.label() == '*ICH*' + num:
+        if st.label() == '*ICH*' + num or st.label() == '*T*' + num:
             found += st
     if len(found) == 1:
         return found[0]
