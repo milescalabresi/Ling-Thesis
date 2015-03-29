@@ -10,7 +10,6 @@ Spring 2015"""
 __author__ = 'Miles Calabresi'
 
 import sys
-import os
 import re
 import random
 # import antigravity
@@ -396,7 +395,9 @@ def verify(msg=''):
     :param msg: an optional text message to explain what needs to be verified
     :return: nothing -- either continue or quit
     """
-    return True  # Uncomment to see what happens!
+    if not safe_mode:
+        return True
+
     resp = input(msg + "\nContinue?\n").lower()
     while True:
         if resp == 'y' or resp == 'yes':
@@ -672,6 +673,11 @@ def mark_args(verb, case_frame, correct_tree):
 # #####################################################################
 # #####################################################################
 
+# Control flow to choose which steps of which algorithms to test
+baseline_steps = [False, False, False]
+gfba_steps = [False, False, False, False, False]
+sba_steps = [False, False, False, False]
+safe_mode = False
 
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
@@ -746,13 +752,16 @@ while newline:
     # Now, update the case according to the given algorithm
     #######################################################
     # ## (1a) "Everything Nominative" (most frequent case) algorithm
-    # current_tree = mark_all(current_tree, 'N')
+    if baseline_steps[0]:
+        current_tree = mark_all(current_tree, 'N')
 
     # ## (1b) "Random proportions" algorithm
-    # current_tree = mark_random(current_tree, corp_counts)
+    if baseline_steps[1]:
+        current_tree = mark_random(current_tree, corp_counts)
 
     # ## (1c) "Total randomness" algorithm
-    # current_tree = mark_random(current_tree)
+    if baseline_steps[2]:
+        current_tree = mark_random(current_tree)
 
     #######################################################
     # ## (2) "Naive" grammatical-function-based algorithm
@@ -764,95 +773,103 @@ while newline:
     # ##     GEN to possessives          NP-POS
     #######################################################
 
-    if False:
+    if sba_steps:
         for node in current_tree.subtrees():
             if is_noun(node) and is_unmarked(node):
-                if find_func(node, 'SBJ'):
+                if find_func(node, 'SBJ') and gfba_steps[0]:
                     node = mark(node, 'N')
-                elif find_func(node, 'OB1'):
+                elif find_func(node, 'OB1') and gfba_steps[1]:
                     node = mark(node, 'A')
-                elif find_func(node, 'OB2') or find_func(node, 'OB3'):
+                elif (find_func(node, 'OB2') or find_func(node, 'OB3')) and \
+                        gfba_steps[2]:
                     node = mark(node, 'D')
-                elif find_func(node, 'POS'):
+                elif find_func(node, 'PPOBJ') and gfba_steps[3]:
+                    node = mark(node, 'D')
+                elif find_func(node, 'POS') and gfba_steps[4]:
                     node = mark(node, 'G')
-                elif find_func(node, 'PPOBJ'):
-                    node = mark(node, 'D')
 
     ##########
     # ## (3) Structure-Based Algorithm
     ##########
 
     # ## STEP 1: Lexically marked case
-    # for node in current_tree.subtrees():
-    #     if is_verb(node):
-    #         try:
-    #             # extract the lemma of the verb from the tree node
-    #             quirky_verb = node[0][node[0].index('-') + 1:]
-    #             if quirky_verb in LEXICON:
-    #                 new_tree = mark_args(node, LEXICON[quirky_verb][0],
-    #                                      corpus_tree)
-    #                 # If there are multiple case frames and the first
-    #                 # didn't change anything, then try the second.
-    #                 # NOTE: this code is only executed if the first has
-    #                 # no effect. If the first has an effect, the second won't
-    #                 # be tested, even if the second specifies a different
-    #                 # argument from the first.
-    #                 if current_tree == new_tree and \
-    #                    len(LEXICON[quirky_verb]) > 1:
-    #                     new_tree = mark_args(node, LEXICON[quirky_verb][1],
-    #                                          corpus_tree)
-    #                 # Make the changes from mark_args
-    #                 current_tree = new_tree
-    #
-    #         except ValueError:
-    #             verify('Can\'t find dash char to find lemma of verb '
-    #                    + node[0] + ' in tree\n' + str(node.root()))
+    if sba_steps[0]:
+        for node in current_tree.subtrees():
+            if is_verb(node):
+                try:
+                    # extract the lemma of the verb from the tree node
+                    quirky_verb = node[0][node[0].index('-') + 1:]
+                    if quirky_verb in LEXICON:
+                        new_tree = mark_args(node, LEXICON[quirky_verb][0],
+                                             corpus_tree)
+                        # If there are multiple case frames and the first
+                        # didn't change anything, then try the second.
+                        # NOTE: this code is only executed if the first has
+                        # no effect. If the first has an effect, the second
+                        # won't be tested, even if the second specifies a
+                        # different argument from the first.
+                        if current_tree == new_tree and \
+                           len(LEXICON[quirky_verb]) > 1:
+                            new_tree = mark_args(node, LEXICON[quirky_verb][1],
+                                                 corpus_tree)
+                        # Make the changes from mark_args
+                        current_tree = new_tree
 
+                except ValueError:
+                    verify('Can\'t find dash char to find lemma of verb '
+                           + node[0] + ' in tree\n' + str(node.root()))
+
+    # Intermediate code to look at NPs with more than one NP child
     # for node in current_tree.subtrees():
     #     if node.label()[:2] == 'NP':
     #         for child in node:
     #             for child2 in node:
-    #                 if child != child2 and child.label()[:2] == 'NP' and child2.label()[:2] == 'NP':
+    #                 if child != child2 and child.label()[:2] == 'NP' and \
+    #                                 child2.label()[:2] == 'NP':
     #                     print('\n', node.label())
     #                     for c in node:
     #                         print('\t', c.label(), end='\t')
 
     # ## For efficiency, keep track of all unmarked nouns instead of searching
     # ## the whole tree at each of the following steps.
-    unmarked_nouns = []
-    for node in current_tree.subtrees():
-        if is_noun(node) and is_unmarked(node):
-            unmarked_nouns.append(node)
+    if sba_steps[1] or sba_steps[2]:
+        unmarked_nouns = []
+        for node in current_tree.subtrees():
+            if is_noun(node) and is_unmarked(node):
+                unmarked_nouns.append(node)
 
     # ## STEP 2: Dependent case
-    # for node in unmarked_nouns[:]:
-    #     for node2 in unmarked_nouns[:]:
-    #         if node != node2 and c_commands(node, node2) and \
-    #            same_domain(node, node2):
-    #             unmarked_nouns.remove(node2)
-    #             current_tree[node2.treeposition()] = mark(node2, 'A')
+    if sba_steps[1]:
+        for node in unmarked_nouns[:]:
+            for node2 in unmarked_nouns[:]:
+                if node != node2 and c_commands(node, node2) and \
+                   same_domain(node, node2):
+                    unmarked_nouns.remove(node2)
+                    current_tree[node2.treeposition()] = mark(node2, 'A')
 
     # ## STEP 3: Unmarked case
-    # for node in unmarked_nouns[:]:
-    #     par = node.parent()
-    #     while par is not None:
-    #         if par.label()[:2] == 'CP':
-    #             unmarked_nouns.remove(node)
-    #             current_tree[node.treeposition()] = mark(node, 'N')
-    #             break
-    #         elif par.label()[:2] == 'PP':
-    #             unmarked_nouns.remove(node)
-    #             current_tree[node.treeposition()] = mark(node, 'D')
-    #             break
-    #         elif par.label()[:6] == 'NP-POS':
-    #             unmarked_nouns.remove(node)
-    #             current_tree[node.treeposition()] = mark(node, 'G')
-    #             break
-    #         else:
-    #             par = par.parent()
+    if sba_steps[2]:
+        for node in unmarked_nouns[:]:
+            par = node.parent()
+            while par is not None:
+                if par.label()[:2] == 'CP':
+                    unmarked_nouns.remove(node)
+                    current_tree[node.treeposition()] = mark(node, 'N')
+                    break
+                elif par.label()[:2] == 'PP':
+                    unmarked_nouns.remove(node)
+                    current_tree[node.treeposition()] = mark(node, 'D')
+                    break
+                elif par.label()[:6] == 'NP-POS':
+                    unmarked_nouns.remove(node)
+                    current_tree[node.treeposition()] = mark(node, 'G')
+                    break
+                else:
+                    par = par.parent()
 
     # ## STEP 4: Default
-    # current_tree = mark_all(current_tree, 'N')
+    if sba_steps[3]:
+        current_tree = mark_all(current_tree, 'N')
 
     # ####################################
     # ... and match the tree's cases against the corpus version and update
@@ -896,6 +913,6 @@ for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][1].values()),
           'Marked wrong:', sum(lex_verbs[vb][1].values()),
           '    Unmarked:', sum(lex_verbs[vb][2]))
 print('     Total wrong:', sum(sum(lex_verbs[v][1].values())
-                             for v in lex_verbs.keys()))
+                               for v in lex_verbs.keys()))
 print('Total unmarked:', sum(sum(lex_verbs[v][2]) for v in lex_verbs.keys()))
 CORPUS.close()
