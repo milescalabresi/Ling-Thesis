@@ -614,14 +614,20 @@ def mark_args(verb, case_frame, correct_tree):
                 verify('No ' + arg_types[i][0] + ' of verb ' + verb[0] +
                        ' found in ' + str(verb.root()) + '\n\nFound ' +
                        str(found))
+                continue
             elif len(found) > 1:
                 counts_by_function[i][3] += 1
                 lex_verbs[verb_lemma][2][1] += 1
                 verify('Found multiple ' + str(arg_types[i][0]) + 's of verb '
                        + verb[0] + ' in\n' + str(verb.root()) + '\n\nFound ' +
                        str(found))
-                # If verify passes, then just use the leftmost child
-                found = list(found[0])
+                # If verify passes, then just use the leftmost non-null child
+                newfound = []
+                for j in range(len(found)):
+                    if isinstance(found[j], ParentedTree):
+                        newfound.append(found[j])
+                        break
+                found = newfound
             if len(found) == 1:
                 # Switch to the head of the NP we found, if it's there (if it's
                 # not, then the first is_noun will catch it).
