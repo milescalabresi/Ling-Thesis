@@ -535,7 +535,8 @@ def same_domain(a, b):
     if a == b:
         return True
     lca = find_least_common_ancestor(a, b)
-    return not (crosses(a, lca, 'CP') or crosses(b, lca, 'CP'))
+    return not (crosses(a, lca, 'CP') or crosses(b, lca, 'CP') or
+                crosses(a, lca, 'IP') or crosses(b, lca, 'IP'))
 
 
 def mark_args(verb, case_frame, correct_tree):
@@ -693,8 +694,9 @@ safe_mode = False
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
     # CORPUS = open('testcorp.txt', encoding='utf-8')
-    CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
-    # CORPUS = open('Modern IcePaHC Files.txt', encoding='utf-8')
+    # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
+    CORPUS = open('moderntexts.txt', encoding='utf-8')
+    # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
     print('File not found.')
     sys.exit(1)
@@ -775,7 +777,7 @@ while newline:
         current_tree = mark_random(current_tree)
 
     #######################################################
-    # ## (2) "Naive" grammatical-function-based algorithm
+    # ## (2) Grammatical-function-based algorithm
     # ##     Using the NP-<func> markings given in the corpus,
     # ##     make the following case assignments:
     # ##     NOM to subjects             NP-SBJ
@@ -784,20 +786,19 @@ while newline:
     # ##     GEN to possessives          NP-POS
     #######################################################
 
-    if sba_steps:
-        for node in current_tree.subtrees():
-            if is_noun(node) and is_unmarked(node):
-                if find_func(node, 'SBJ') and gfba_steps[0]:
-                    node = mark(node, 'N')
-                elif find_func(node, 'OB1') and gfba_steps[1]:
-                    node = mark(node, 'A')
-                elif (find_func(node, 'OB2') or find_func(node, 'OB3')) and \
-                        gfba_steps[2]:
-                    node = mark(node, 'D')
-                elif find_func(node, 'PPOBJ') and gfba_steps[3]:
-                    node = mark(node, 'D')
-                elif find_func(node, 'POS') and gfba_steps[4]:
-                    node = mark(node, 'G')
+    for node in current_tree.subtrees():
+        if is_noun(node) and is_unmarked(node):
+            if find_func(node, 'SBJ') and gfba_steps[0]:
+                node = mark(node, 'N')
+            elif find_func(node, 'OB1') and gfba_steps[1]:
+                node = mark(node, 'A')
+            elif (find_func(node, 'OB2') or find_func(node, 'OB3')) and \
+                    gfba_steps[2]:
+                node = mark(node, 'D')
+            elif find_func(node, 'PPOBJ') and gfba_steps[3]:
+                node = mark(node, 'D')
+            elif find_func(node, 'POS') and gfba_steps[4]:
+                node = mark(node, 'G')
 
     ##########
     # ## (3) Structure-Based Algorithm
