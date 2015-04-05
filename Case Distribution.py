@@ -113,7 +113,8 @@ def is_verb(st):
     :return: Boolean corresponding to whether the node is a verb
     """
     assert type(st) != str
-    return type(st[0]) == str and st.label()[:2] == 'VB'
+    return type(st[0]) == str and (st.label()[:2] == 'VB' or
+                                   st.label()[:2] == 'VA')
 
 
 def is_unmarked(word):
@@ -484,6 +485,8 @@ def find_func(n_head, func):
             return n_head
         elif n_head.label()[:2] == 'PP' and func == 'PPOBJ':
             return True
+        else:
+            verify('No function found in' + str(n_head))
     return None
 
 
@@ -500,13 +503,13 @@ def find_least_common_ancestor(a, b):
     return b
 
 
-def crosses(st, ancestor, layer):
+def crosses(st, ancestor, layers):
     """
     determine whether one crosses a layer of type layer while going from
     the node st to the node ancestor (or vice versa)
     :param st: any node in a tree
     :param ancestor: an ancestor of st, including possibly st itself
-    :param layer: the type of node to test for, e.g. CP
+    :param layers: the types of node to test for, as strings, e.g. CP and
     :return:
     """
     assert st.root() == ancestor.root()
@@ -515,8 +518,9 @@ def crosses(st, ancestor, layer):
         return False
     st = st.parent()
     while st != ancestor:
-        if st.label()[:len(layer)] == layer:
-            return True
+        for layer in layers:
+            if st.label()[:len(layer)] == layer:
+                return True
         st = st.parent()
     return False
 
@@ -535,8 +539,8 @@ def same_domain(a, b):
     if a == b:
         return True
     lca = find_least_common_ancestor(a, b)
-    return not (crosses(a, lca, 'CP') or crosses(b, lca, 'CP') or
-                crosses(a, lca, 'IP') or crosses(b, lca, 'IP'))
+    return not (crosses(a, lca, ['CP', 'IP']) or
+                crosses(b, lca, ['CP', 'IP']))
 
 
 def mark_args(verb, case_frame, correct_tree):
