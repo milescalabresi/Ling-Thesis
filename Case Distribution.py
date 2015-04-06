@@ -114,7 +114,8 @@ def is_verb(st):
     """
     assert type(st) != str
     return type(st[0]) == str and (st.label()[:2] == 'VB' or
-                                   st.label()[:2] == 'VA')
+                                   st.label()[:2] == 'VA' or
+                                   st.label()[:2] == 'RD')
 
 
 def is_unmarked(word):
@@ -885,7 +886,8 @@ while newline:
 
     # ## STEP 4: Default
     if sba_steps[3]:
-        current_tree = mark_all(current_tree, 'N')
+        for node in unmarked_nouns[:]:
+            current_tree[node.treeposition()] = mark(node, 'N')
 
     # ####################################
     # ... and match the tree's cases against the corpus version and update
