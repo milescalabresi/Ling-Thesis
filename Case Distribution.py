@@ -480,11 +480,13 @@ def find_func(n_head, func):
             (n_head.label()[:6] != 'NP-SBJ') and \
             (n_head.label()[:5] != 'NP-OB') and \
             (n_head.label()[:6] != 'NP-POS') and \
-            (n_head.label()[:2] != 'PP'):
+            (n_head.label()[:2] != 'PP') and \
+            (n_head.label()[:3] != 'WPP'):
         n_head = n_head.parent()
         if n_head.label() == 'NP-' + func:
             return n_head
-        elif n_head.label()[:2] == 'PP' and func == 'PPOBJ':
+        elif (n_head.label()[:2] == 'PP'or
+              n_head.label()[:3] == 'WPP') and func == 'PPOBJ':
             return True
         else:
             verify('No function found in' + str(n_head))
@@ -693,7 +695,7 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [True, True, True, False]
+sba_steps = [False, True, False, False]
 safe_mode = False
 
 try:
@@ -873,7 +875,7 @@ while newline:
                     unmarked_nouns.remove(node)
                     current_tree[node.treeposition()] = mark(node, 'N')
                     break
-                elif par.label()[:2] == 'PP':
+                elif par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
                     unmarked_nouns.remove(node)
                     current_tree[node.treeposition()] = mark(node, 'D')
                     break
