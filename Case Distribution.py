@@ -802,19 +802,21 @@ while newline:
     # ##     GEN to possessives          NP-POS
     #######################################################
 
-    for node in current_tree.subtrees():
-        if is_noun(node) and is_unmarked(node):
-            if find_func(node, 'SBJ') and gfba_steps[0]:
-                node = mark(node, 'N')
-            elif find_func(node, 'OB1') and gfba_steps[1]:
-                node = mark(node, 'A')
-            elif (find_func(node, 'OB2') or find_func(node, 'OB3')) and \
-                    gfba_steps[2]:
-                node = mark(node, 'D')
-            elif find_func(node, 'PPOBJ') and gfba_steps[3]:
-                node = mark(node, 'D')
-            elif find_func(node, 'POS') and gfba_steps[4]:
-                node = mark(node, 'G')
+    if gfba_steps[0] or gfba_steps[1] or gfba_steps[2] or gfba_steps[3] or \
+       gfba_steps[4]:
+        for node in current_tree.subtrees():
+            if is_noun(node) and is_unmarked(node):
+                if gfba_steps[0] and find_func(node, 'SBJ'):
+                    node = mark(node, 'N')
+                elif gfba_steps[1] and find_func(node, 'OB1'):
+                    node = mark(node, 'A')
+                elif gfba_steps[2] and \
+                        (find_func(node, 'OB2') or find_func(node, 'OB3')):
+                    node = mark(node, 'D')
+                elif gfba_steps[3] and find_func(node, 'PPOBJ'):
+                    node = mark(node, 'D')
+                elif gfba_steps[4] and find_func(node, 'POS'):
+                    node = mark(node, 'G')
 
     ##########
     # ## (3) Structure-Based Algorithm
