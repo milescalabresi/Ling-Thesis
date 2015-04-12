@@ -90,20 +90,30 @@ def spec_c_commands(a, b, sym):
         return c_commands(a, b) and not c_commands(b, a)
 
 
-def is_noun(label):
+def is_noun(st, ignore_dubs=False):
     """
     A Predicate to tell whether a given node in the tree is a noun
-    and thus able to be marked with case.
-    :param label: either a node or its label
+    and thus able to be marked with case, possibly ignoring certain kinds of
+    nouns.
+    :param st: a node in a tree
+    :param ignore_dubs: a flag to tell whether or not to return true for
+    three kinds of nouns that I consider duplicates: appositives, low
+    coordinated/conjoined nouns, and right proper nouns. All of these
+    categories are assumed to receive case in the same way as their partners
+    (the noun modified by the appositive, the other conjunct(s) and the first/
+    leftmost proper noun in the sequence). Therefore, I choose to ignore them
+    so they aren't double-counted.
     :return: Boolean
     """
-    if type(label) != str:
-        label = label.label()
     # the @ symbol is my placeholder character for "unmarked"
-    if re.match('(N(PR)?S?|W?PRO)-[NADG@]', label):
+    if re.match('(N(PR)?S?|W?PRO)-[NADG@]', st.label()):
+        if ignore_dubs:
+            p = st.parent().label()
+            if p[:5] == 'CONJP' or p[:6] == 'NP-PRN' or \
+               st.leftsibling().label()[:3] == 'NPR':
+                return False
         return True
-    else:
-        return False
+    return False
 
 
 def is_verb(st):
@@ -123,13 +133,11 @@ def is_unmarked(word):
     Predicate to determine whether a given noun (or pronoun) is currently
     unmarked for case
     :rtype : Boolean
-    :param word: any node (presumably a noun head) in a atree
+    :param word: any noun head node in a tree
     :return: Boolean value corresponding to if word is not case-marked
     """
-    if type(word) != str:
-        word = word.label()
     if is_noun(word):
-        return word[-1] == '@'
+        return word.label()[-1] == '@'
     else:
         if verify('Error: The node ' + word +
                   ' inputted is not a noun; cannot check case marking.'):
@@ -228,16 +236,17 @@ def count_case_freq(tree, counter):
     """
     A function to count the frequencies in a given tree of each case in a
     given counter.
-    :param tree:
-    :param counter:
+    :param tree: an NLTK syntax tree
+    :param counter: any existing counts to be added to
     :return:
     """
-    for word in tree.pos():
-        if is_noun(word[1]):
+    for word in tree.subtrees():
+        if is_noun(word):
             try:
-                counter[word[1][-1]] += 1
+                counter[word.label()[-1]] += 1
             except KeyError:
-                print('Error: bad case ' + word[1][-1] + ' on ' + str(word))
+                print('Error: bad case ' + word.label()[-1] + ' on ' +
+                      str(word))
     return counter
 
 
@@ -256,12 +265,12 @@ def score_tree(corpus, test, existing=None):
                     'DN': 0, 'DA': 0, 'DD': 0, 'DG': 0,
                     'GN': 0, 'GA': 0, 'GD': 0, 'GG': 0,
                     'N@': 0, 'A@': 0, 'D@': 0, 'G@': 0}
-    corp_nodes = corpus.pos()
-    test_nodes = test.pos()
+    corp_nodes = [st for st in corpus.subtrees()]
+    test_nodes = [st for st in test.subtrees()]
     assert len(corp_nodes) == len(test_nodes)
 
-    pairs = [(corp_nodes[i][1], test_nodes[i][1])
-             for i in range(len(test_nodes)) if is_noun(test_nodes[i][1])]
+    pairs = [(corp_nodes[i].label(), test_nodes[i].label())
+             for i in range(len(test_nodes)) if is_noun(test_nodes[i])]
 
     for pair in pairs:
         existing[pair[0][-1] + pair[1][-1]] += 1
@@ -451,7 +460,7 @@ def find_head(np):
     :param np: a NP projection in a tree
     :return: the N head of that NP (in that same tree)
     """
-    if is_noun(np.label()):
+    if is_noun(np):
         return np
     if np.label()[:2] != 'NP' and np.label()[:3] != 'WNP':
         print('Bad noun phrase in find_head function:', np)
@@ -701,8 +710,8 @@ safe_mode = False
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
     # CORPUS = open('testcorp.txt', encoding='utf-8')
-    # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
-    CORPUS = open('moderntexts.txt', encoding='utf-8')
+    CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
+    # CORPUS = open('moderntexts.txt', encoding='utf-8')
     # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
     print('File not found.')
@@ -827,6 +836,10 @@ while newline:
                         # no effect. If the first has an effect, the second
                         # won't be tested, even if the second specifies a
                         # different argument from the first.
+                        # Given my current lists, this is not a problem, but
+                        # it would be ideal to allow testing of each argument
+                        # for each frame given. For now, this relies on careful
+                        # choice and/or modification of case frames.
                         if current_tree == new_tree and \
                            len(LEXICON[quirky_verb]) > 1:
                             new_tree = mark_args(node, LEXICON[quirky_verb][1],
