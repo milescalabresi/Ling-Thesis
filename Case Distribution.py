@@ -706,7 +706,7 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [False, True, False, False]
+sba_steps = [False, False, True, False, False]
 safe_mode = False
 
 try:
@@ -825,6 +825,7 @@ while newline:
     ##########
 
     # ## STEP 1: Lexically marked case
+    # ## 1a: "quirky" verbs and prepositions
     if sba_steps[0]:
         for node in current_tree.subtrees():
             if is_verb(node):
@@ -855,44 +856,20 @@ while newline:
                     verify('Can\'t find dash char to find lemma of verb '
                            + node[0] + ' in tree\n' + str(node.root()))
 
-    # Intermediate code to look at NPs with more than one NP child
-    # for node in current_tree.subtrees():
-    #     if node.label()[:2] == 'NP':
-    #         for child in node:
-    #             for child2 in node:
-    #                 if child != child2 and child.label()[:2] == 'NP' and \
-    #                                 child2.label()[:2] == 'NP':
-    #                     print('\n', node.label())
-    #                     for c in node:
-    #                         print('\t', c.label(), end='\t')
-
     # ## For efficiency, keep track of all unmarked nouns instead of searching
     # ## the whole tree at each of the following steps.
-    if sba_steps[1] or sba_steps[2] or sba_steps[3]:
-        unmarked_nouns = []
-        for node in current_tree.subtrees():
-            if is_noun(node) and is_unmarked(node):
-                unmarked_nouns.append(node)
+    unmarked_nouns = []
+    for node in current_tree.subtrees():
+        if is_noun(node) and is_unmarked(node):
+            unmarked_nouns.append(node)
 
-    # ## STEP 2: Dependent case
+    # ## STEP 1B: "Applicative" datives (indirect objects), genitive
+    # possessors, and dative prepositional objects
     if sba_steps[1]:
         for node in unmarked_nouns[:]:
-            for node2 in unmarked_nouns[:]:
-                if node != node2 and c_commands(node, node2) and \
-                   same_domain(node, node2):
-                    unmarked_nouns.remove(node2)
-                    current_tree[node2.treeposition()] = mark(node2, 'A')
-
-    # ## STEP 3: Unmarked case
-    if sba_steps[2]:
-        for node in unmarked_nouns[:]:
             par = node.parent()
-            while par is not None:
-                if par.label()[:2] == 'CP' or par.label()[:2] == 'IP':
-                    unmarked_nouns.remove(node)
-                    current_tree[node.treeposition()] = mark(node, 'N')
-                    break
-                elif par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
+            while par is not None and par.label()[:2] not in ['CP', 'IP']:
+                if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
                     unmarked_nouns.remove(node)
                     current_tree[node.treeposition()] = mark(node, 'D')
                     break
@@ -903,8 +880,29 @@ while newline:
                 else:
                     par = par.parent()
 
-    # ## STEP 4: Default
+    # ## STEP 2: Dependent case
+    if sba_steps[2]:
+        for node in unmarked_nouns[:]:
+            for node2 in unmarked_nouns[:]:
+                if node != node2 and c_commands(node, node2) and \
+                   same_domain(node, node2):
+                    unmarked_nouns.remove(node2)
+                    current_tree[node2.treeposition()] = mark(node2, 'A')
+
+    # ## STEP 3: Unmarked case
     if sba_steps[3]:
+        for node in unmarked_nouns[:]:
+            par = node.parent()
+            while par is not None:
+                if par.label()[:2] == 'CP' or par.label()[:2] == 'IP':
+                    unmarked_nouns.remove(node)
+                    current_tree[node.treeposition()] = mark(node, 'N')
+                    break
+                else:
+                    par = par.parent()
+
+    # ## STEP 4: Default
+    if sba_steps[4]:
         for node in unmarked_nouns[:]:
             current_tree[node.treeposition()] = mark(node, 'N')
 
