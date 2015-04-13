@@ -868,7 +868,7 @@ while newline:
 
     # ## For efficiency, keep track of all unmarked nouns instead of searching
     # ## the whole tree at each of the following steps.
-    if sba_steps[1] or sba_steps[2]:
+    if sba_steps[1] or sba_steps[2] or sba_steps[3]:
         unmarked_nouns = []
         for node in current_tree.subtrees():
             if is_noun(node) and is_unmarked(node):
