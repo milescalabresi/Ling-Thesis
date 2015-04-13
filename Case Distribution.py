@@ -90,7 +90,7 @@ def spec_c_commands(a, b, sym):
         return c_commands(a, b) and not c_commands(b, a)
 
 
-def is_noun(st, ignore_dubs=False):
+def is_noun(st, ignore_dubs=True):
     """
     A Predicate to tell whether a given node in the tree is a noun
     and thus able to be marked with case, possibly ignoring certain kinds of
@@ -109,8 +109,10 @@ def is_noun(st, ignore_dubs=False):
     if re.match('(N(PR)?S?|W?PRO)-[NADG@]', st.label()):
         if ignore_dubs:
             p = st.parent().label()
-            if p[:5] == 'CONJP' or p[:6] == 'NP-PRN' or \
-               st.leftsibling().label()[:3] == 'NPR':
+            ls = ''
+            if st.left_sibling() is not None:
+                ls = st.left_sibling().label()
+            if p[:5] == 'CONJP' or p[:6] == 'NP-PRN' or ls[:3] == 'NPR':
                 return False
         return True
     return False
