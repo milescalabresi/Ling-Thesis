@@ -479,29 +479,32 @@ def find_head(np):
 
 def find_func(n_head, func):
     """
-    Search ancestors of a given noun head for a function-marked NP layer, up to
-    CP layers
+    Search ancestors of a given noun head for a function-marked NP layer,
+    stopping at anything but intermediate noun layers, conjunction phrases, or
+    non-structural layers.
     :param n_head: a noun head node in any tree
     :param func: a string describing the grammatical function of the sought NP
     :return: a node in the same tree corresponding to NP with the given
     function that contains the given N head, or None if none found
     """
-    while (n_head.parent() is not None) and \
-            (n_head.label()[:2] != 'CP') and \
-            (n_head.label()[:6] != 'NP-SBJ') and \
-            (n_head.label()[:5] != 'NP-OB') and \
-            (n_head.label()[:6] != 'NP-POS') and \
-            (n_head.label()[:2] != 'PP') and \
-            (n_head.label()[:3] != 'WPP'):
+
+    while n_head.parent() is not None and \
+            ((n_head.parent().label()[:2] == 'NP') or
+             (n_head.parent().label()[:2] == 'NX') or
+             (n_head.parent().label()[:5] == 'CONJP') or
+             (n_head.parent().label()[:4] == 'CODE') or
+             (n_head.parent().label()[:4] == 'FRAG') or
+             (n_head.parent().label()[:3] == 'QTP') or
+             (n_head.parent().label()[:3] == 'REP')):
         n_head = n_head.parent()
-        if n_head.label() == 'NP-' + func:
-            return n_head
-        elif (n_head.label()[:2] == 'PP'or
-              n_head.label()[:3] == 'WPP') and func == 'PPOBJ':
-            return True
-        else:
-            verify('No function found in' + str(n_head))
-    return None
+    if n_head.label() == 'NP-' + func:
+        return n_head
+    elif (n_head.label()[:2] == 'PP' or
+          n_head.label()[:3] == 'WPP') and func == 'PPOBJ':
+        return True
+    else:
+        verify('No function found in' + str(n_head))
+        return None
 
 
 def find_least_common_ancestor(a, b):
