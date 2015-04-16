@@ -159,11 +159,15 @@ def find_base_pos(word):
     :param word: a node in the tree
     :return: a different node corresponding to the base position of word
     """
+    if len(word.label()) < 2:
+        return word
     num = word.label()[-2:]
-    assert re.match('-\d', num)
+    if not re.match('-\d', num):
+        return word
     found = []
+    traces = ['*T*', '*ICH*', '*', '*exp*', '*con*', '*pro*', '*arb*']
     for st in word.root():
-        if st.label() == '*ICH*' + num or st.label() == '*T*' + num:
+        if st.label() in [s + num for s in traces]:
             found += st
     if len(found) == 1:
         return found[0]
@@ -880,7 +884,10 @@ while newline:
     # possessors, and dative prepositional objects
     if sba_steps[1]:
         for node in unmarked_nouns[:]:
-            par = node.parent()
+            if find_base_pos(node.parent())[:5] in ['*pro*', '*arb*']:
+                par = find_base_pos(node.parent()).parent()
+            else:
+                par = node.parent()
             while par is not None and par.label()[:2] not in ['CP', 'IP']:
                 if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
                     unmarked_nouns.remove(node)
@@ -925,8 +932,9 @@ while newline:
     # ####################################
     test_counts = count_case_freq(current_tree, test_counts)
     scorecard = score_tree(corpus_tree, current_tree, scorecard)
+
     if current_tree != corpus_tree:
-        print(current_tree)
+        print(current_tree, '\n\n')
     #####################################
 
 # Finally, print statistics from the tree...
@@ -960,9 +968,9 @@ print('Least successful quirky verbs:')
 for vb in sorted(lex_verbs.keys(), key=lambda x: sum(lex_verbs[x][1].values()),
                  reverse=True):
     print(vb, lex_verbs[vb],
-          'Marked wrong:', sum(lex_verbs[vb][1].values()),
-          '    Unmarked:', sum(lex_verbs[vb][2]))
-print('     Total wrong:', sum(sum(lex_verbs[v][1].values())
-                               for v in lex_verbs.keys()))
+          '"Wrong" on list:', sum(lex_verbs[vb][1].values()),
+          '       Unmarked:', sum(lex_verbs[vb][2]))
+print('              Total:', sum(sum(lex_verbs[v][1].values())
+                                  for v in lex_verbs.keys()))
 print('Total unmarked:', sum(sum(lex_verbs[v][2]) for v in lex_verbs.keys()))
 CORPUS.close()
