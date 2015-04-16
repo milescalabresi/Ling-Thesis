@@ -105,6 +105,9 @@ def is_noun(st, ignore_dubs=True):
     so they aren't double-counted.
     :return: Boolean
     """
+    if isinstance(st, str):
+        # Don't count Null nodes, which show up as strings not trees.
+        return False
     # the @ symbol is my placeholder character for "unmarked"
     if re.match('(N(PR)?S?|W?PRO)-[NADG@]', st.label()):
         if ignore_dubs:
@@ -127,7 +130,9 @@ def is_verb(st):
     assert type(st) != str
     return type(st[0]) == str and (st.label()[:2] == 'VB' or
                                    st.label()[:2] == 'VA' or
-                                   st.label()[:2] == 'RD')
+                                   st.label()[:2] == 'RD' or
+                                   # include preps for quirky purposes
+                                   st.label() == 'P')
 
 
 def is_unmarked(word):
@@ -556,8 +561,8 @@ def same_domain(a, b):
     if a == b:
         return True
     lca = find_least_common_ancestor(a, b)
-    return not (crosses(a, lca, ['CP', 'IP']) or
-                crosses(b, lca, ['CP', 'IP']))
+    return not (crosses(a, lca, ['CP']) or
+                crosses(b, lca, ['CP']))
 
 
 def mark_args(verb, case_frame, correct_tree):
@@ -613,9 +618,14 @@ def mark_args(verb, case_frame, correct_tree):
                 cc_cond = lambda x, y: c_commands(y, x)
 
             for st in tree.subtrees():
+                # Search for an NP that stands in the appropriate c-command
+                # relation to the given verb/prep head within the same domain.
+                # For verbs, we must find the right kind of argument like -SBJ.
+                # For prepositions, it is sufficient to find just an NP.
                 if (st.label()[:6] == 'NP-' + str(arg_types[i][1]) or
-                        st.label()[:6] == 'NP-' + str(arg_types[i][2])) and \
-                        cc_cond(st, verb) and same_domain(st, verb):
+                    st.label()[:6] == 'NP-' + str(arg_types[i][2]) or
+                    (st.label()[:2] == 'NP' and verb.label() == 'P')) and \
+                   cc_cond(st, verb) and same_domain(st, verb):
                     if st[0][-7:-2] == '*ICH*' or st[0][-5:-2] == '*T*':
                         st = find_surf_pos(st)
                     found.append(st)
@@ -709,7 +719,7 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [False, False, True, False, False]
+sba_steps = [True, True, True, True, False]
 safe_mode = False
 
 try:
@@ -915,6 +925,8 @@ while newline:
     # ####################################
     test_counts = count_case_freq(current_tree, test_counts)
     scorecard = score_tree(corpus_tree, current_tree, scorecard)
+    if current_tree != corpus_tree:
+        print(current_tree)
     #####################################
 
 # Finally, print statistics from the tree...
