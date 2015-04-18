@@ -169,18 +169,16 @@ def find_base_pos(word):
         return word
     found = []
     traces = ['*T*', '*ICH*', '*', '*exp*', '*con*', '*pro*', '*arb*']
+    traces = [s + num for s in traces]
     for st in word.root():
-        if st.label() in [s + num for s in traces]:
+        if st.label() in traces:
             found += st
     if len(found) == 1:
         return found[0]
     else:
-        print('Error finding unique base position for', word.label(),
-              'in tree', word.root(), 'Found', found)
-        if verify():
+        if verify('Error finding unique base position for' + word.label() +
+                  'in tree\n' + str(word.root()[1]) + '\nFound ' + str(found)):
             return word
-        else:
-            sys.exit(1)
 
 
 def find_surf_pos(word):
@@ -887,11 +885,11 @@ while newline:
     # possessors, and dative prepositional objects
     if sba_steps[1]:
         for node in unmarked_nouns[:]:
-            if find_base_pos(node.parent())[:5] in ['*pro*', '*arb*']:
-                par = find_base_pos(node.parent()).parent()
-            else:
-                par = node.parent()
+            par = node.parent()
             while par is not None and par.label()[:2] not in ['CP', 'IP']:
+                if find_base_pos(node)[:5] in ['*pro*', '*arb*']:
+                    par = find_base_pos(node)
+                    continue
                 if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
                     unmarked_nouns.remove(node)
                     current_tree[node.treeposition()] = mark(node, 'D')
