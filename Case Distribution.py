@@ -115,7 +115,10 @@ def is_noun(st, ignore_dubs=True):
             ls = ''
             if st.left_sibling() is not None:
                 ls = st.left_sibling().label()
-            if p[:5] == 'CONJP' or p[:6] == 'NP-PRN' or ls[:3] == 'NPR':
+            if p[:5] == 'CONJP' or p[:6] == 'NP-PRN' or ls[:3] == 'NPR' or \
+                    ('CONJ' in [child.label() for child in st.parent()] and
+                     (st.right_sibling() is None or
+                      st.right_sibling().label() != 'CONJ')):
                 return False
         return True
     return False
