@@ -726,6 +726,7 @@ baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
 sba_steps = [True, True, True, True, False]
 safe_mode = False
+print_errors = False
 
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
@@ -934,7 +935,7 @@ while newline:
     test_counts = count_case_freq(current_tree, test_counts)
     scorecard = score_tree(corpus_tree, current_tree, scorecard)
 
-    if current_tree != corpus_tree:
+    if print_errors and current_tree != corpus_tree:
         print(current_tree, '\n\n')
     #####################################
 
