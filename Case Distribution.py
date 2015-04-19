@@ -475,8 +475,9 @@ def find_head(np):
     if is_noun(np):
         return np
     if np.label()[:2] != 'NP' and np.label()[:3] != 'WNP':
-        print('Bad noun phrase in find_head function:', np)
-        sys.exit(1)
+        print('Bad noun phrase', np.label(), 'in find_head function:', np,
+              flush=True)
+        assert np.label()[:2] == 'NP'
     for child in np:
         if is_noun(child):
             return child
@@ -743,9 +744,9 @@ LEXICON = {}
 lexfile = open('lexcasemarkers.txt', encoding='utf-8')
 newline = lexfile.readline()
 while newline:
-    newline = newline.replace(' ', '').strip()
+    newline = newline.strip()
     LEXICON[newline[:newline.index(':')]] =\
-        newline[newline.index(':') + 1:].split(',')
+        newline[newline.index(':') + 2:].replace(' ', '').split(',')
     newline = lexfile.readline()
 del newline
 lexfile.close()
