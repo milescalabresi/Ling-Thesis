@@ -507,7 +507,7 @@ def find_func(n_head, func):
              (n_head.parent().label()[:3] == 'QTP') or
              (n_head.parent().label()[:3] == 'REP')):
         n_head = n_head.parent()
-    if n_head.label() == 'NP-' + func:
+    if n_head.label()[:3+len(func)] == 'NP-' + func:
         return n_head
     elif (n_head.label()[:2] == 'PP' or
           n_head.label()[:3] == 'WPP') and func == 'PPOBJ':
@@ -731,8 +731,8 @@ print_errors = False
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
     # CORPUS = open('testcorp.txt', encoding='utf-8')
-    CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
-    # CORPUS = open('moderntexts.txt', encoding='utf-8')
+    # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
+    CORPUS = open('moderntexts.txt', encoding='utf-8')
     # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
     print('File not found.')
