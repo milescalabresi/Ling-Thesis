@@ -191,9 +191,9 @@ def find_base_pos(word):
     found = []
     traces = ['*T*', '*ICH*', '*']
     traces = [s + num for s in traces]
-    for st in word.root():
+    for st in word.root().subtrees():
         if st[0] in traces:
-            found += st
+            found.append(st)
     if len(found) == 1:
         return found[0]
     else:
