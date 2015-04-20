@@ -180,10 +180,12 @@ def find_max_proj(n_head):
     return n_head
 
 
-def find_base_pos(word):
+def find_base_pos(word, a_mvmt=False):
     """
     Find the base position of a moved constituent
     :param word: a node in the tree
+    :param a_mvmt: flag to toggle whether to move down to base position of
+    A-movement or just A'-movement (default)
     :return: a different node corresponding to the base position of word
     """
     if len(word.label()) < 2:
@@ -192,7 +194,9 @@ def find_base_pos(word):
     if not re.match('-\d', num):
         return word
     found = []
-    traces = ['*T*', '*ICH*', '*']
+    traces = ['*ICH*']
+    if a_mvmt:
+        traces.extend(['*T*', '*'])
     traces = [s + num for s in traces]
     for st in word.root().subtrees():
         if st[0] in traces:
@@ -528,11 +532,9 @@ def find_func(n_head, func):
              (n_head.parent().label()[:2] == 'NX') or
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
-        n_head = find_base_pos(n_head.parent())
-        # find_base_pos is benign if the NP/NX parent wasn't moved
-        # use *ICH* for A'-movement (other traces mark A-movement)
-        if n_head.label()[0] == 'N' and \
-                find_base_pos(n_head)[0][:5] == '*ICH*':
+        n_head = n_head.parent()
+        # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
+        if n_head.label()[0] == 'N':
             n_head = find_base_pos(n_head)
     if n_head.label()[:3+len(func)] == 'NP-' + func:
         return n_head
