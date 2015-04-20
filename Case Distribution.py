@@ -121,8 +121,9 @@ def is_noun(st, ignore_dubs=True):
                       st.right_sibling().label() != 'CONJ')):
                 return False
         return True
-    elif st.label()[0] == 'Q' or st.label()[:3] == 'ONE' and \
-            st.parent.label()[:2] == 'NP':
+    elif st.label()[:2] == 'Q-' or (len(st.label()) > 2
+                                    and st.label()[:3] == 'ONE') and \
+            st.parent().label()[:2] == 'NP':
         for child in st:
             if is_noun(child):
                 return False
@@ -508,7 +509,8 @@ def find_head(np):
     """
     if is_noun(np):
         return np
-    if np.label()[:2] != 'NP' and np.label()[:3] != 'WNP':
+    if np.label()[:2] not in ['Q-', 'NP'] and \
+       np.label()[:3] not in ['WNP', 'ONE']:
         print('Bad noun phrase', np.label(), 'in find_head function:', np,
               flush=True)
         assert np.label()[:2] == 'NP'
@@ -666,7 +668,8 @@ def mark_args(verb, case_frame, correct_tree):
                     st.label()[:6] == 'NP-' + str(arg_types[i][2]) or
                     (st.label()[:2] == 'NP' and verb.label() == 'P')) and \
                    cc_cond(st, verb) and same_domain(st, verb):
-                    if st[0][-7:-2] == '*ICH*' or st[0][-5:-2] == '*T*':
+                    if st[0][-7:-2] == '*ICH*' or st[0][-5:-2] == '*T*' or \
+                            st[0][:2] == '*-':
                         st = find_surf_pos(st)
                     found.append(st)
 
@@ -759,15 +762,15 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [True, True, True, True, False]
+sba_steps = [True, False, False, False, False]  # [True, True, True, True, False]
 safe_mode = False
-print_errors = True
+print_errors = False
 
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
     # CORPUS = open('testcorp.txt', encoding='utf-8')
-    CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
-    # CORPUS = open('moderntexts.txt', encoding='utf-8')
+    # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
+    CORPUS = open('moderntexts.txt', encoding='utf-8')
     # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
     print('File not found.')
@@ -779,10 +782,9 @@ lexfile = open('lexcasemarkers.txt', encoding='utf-8')
 newline = lexfile.readline()
 while newline:
     newline = newline.strip()
-    if newline[0] == '#':
-        continue
-    LEXICON[newline[:newline.index(':')]] =\
-        newline[newline.index(':') + 2:].replace(' ', '').split(',')
+    if newline[0] != '#':
+        LEXICON[newline[:newline.index(':')]] =\
+            newline[newline.index(':') + 2:].replace(' ', '').split(',')
     newline = lexfile.readline()
 del newline
 lexfile.close()
