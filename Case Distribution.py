@@ -167,13 +167,16 @@ def find_max_proj(n_head):
     # These labels are empirically the ones that intervene between N heads
     # and their maximum projections. NP-internal possessors are a known
     # pitfall, so we stop specifically at them.
+    prev = n_head
     while n_head.parent() is not None and n_head.label()[:6] != 'NP-POS' and\
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
+        prev = n_head
         n_head = n_head.parent()
-    assert n_head.label()[:5] != 'CONJP' and n_head.label()[:4] != 'CODE'
+    if n_head.label()[:5] == 'CONJP' or n_head.label()[:4] == 'CODE':
+        n_head = prev
     return n_head
 
 
@@ -525,7 +528,12 @@ def find_func(n_head, func):
              (n_head.parent().label()[:2] == 'NX') or
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
-        n_head = n_head.parent()
+        n_head = find_base_pos(n_head.parent())
+        # find_base_pos is benign if the NP/NX parent wasn't moved
+        # use *ICH* for A'-movement (other traces mark A-movement)
+        if n_head.label()[0] == 'N' and \
+                find_base_pos(n_head)[0][:5] == '*ICH*':
+            n_head = find_base_pos(n_head)
     if n_head.label()[:3+len(func)] == 'NP-' + func:
         return n_head
     elif (n_head.label()[:2] == 'PP' or
@@ -749,8 +757,8 @@ print_errors = True
 
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
-    CORPUS = open('testcorp.txt', encoding='utf-8')
-    # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
+    # CORPUS = open('testcorp.txt', encoding='utf-8')
+    CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
     # CORPUS = open('moderntexts.txt', encoding='utf-8')
     # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
