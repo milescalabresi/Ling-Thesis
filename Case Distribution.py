@@ -931,18 +931,20 @@ while newline:
     # ## STEP 2: Dependent case
     if sba_steps[2]:
         for node in unmarked_nouns[:]:
+            n = find_base_pos(node)
             for node2 in unmarked_nouns[:]:
-                if node != node2 and \
-                        c_commands(find_max_proj(node),
-                                   find_max_proj(node2)) and \
-                        same_domain(node, node2):
+                n2 = find_base_pos(node2)
+                if n != n2 and \
+                        c_commands(find_max_proj(n),
+                                   find_max_proj(n2)) and \
+                        same_domain(n, n2):
                     unmarked_nouns.remove(node2)
-                    current_tree[node2.treeposition()] = mark(node2, 'A')
+                    current_tree[n2.treeposition()] = mark(n2, 'A')
 
     # ## STEP 3: Unmarked case
     if sba_steps[3]:
         for node in unmarked_nouns[:]:
-            par = node.parent()
+            par = find_base_pos(node).parent()
             while par is not None:
                 if par.label()[:2] == 'CP' or par.label()[:2] == 'IP':
                     unmarked_nouns.remove(node)
