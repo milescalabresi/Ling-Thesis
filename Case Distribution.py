@@ -168,10 +168,10 @@ def find_base_pos(word):
     if not re.match('-\d', num):
         return word
     found = []
-    traces = ['*T*', '*ICH*', '*', '*exp*', '*con*', '*pro*', '*arb*']
+    traces = ['*T*', '*ICH*', '*']
     traces = [s + num for s in traces]
     for st in word.root():
-        if st.label() in traces:
+        if st[0] in traces:
             found += st
     if len(found) == 1:
         return found[0]
@@ -503,10 +503,7 @@ def find_func(n_head, func):
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
              (n_head.parent().label()[:5] == 'CONJP') or
-             (n_head.parent().label()[:4] == 'CODE') or
-             (n_head.parent().label()[:4] == 'FRAG') or
-             (n_head.parent().label()[:3] == 'QTP') or
-             (n_head.parent().label()[:3] == 'REP')):
+             (n_head.parent().label()[:4] == 'CODE')):
         n_head = n_head.parent()
     if n_head.label()[:3+len(func)] == 'NP-' + func:
         return n_head
@@ -727,13 +724,13 @@ baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
 sba_steps = [True, True, True, True, False]
 safe_mode = False
-print_errors = False
+print_errors = True
 
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
-    # CORPUS = open('testcorp.txt', encoding='utf-8')
+    CORPUS = open('testcorp.txt', encoding='utf-8')
     # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
-    CORPUS = open('moderntexts.txt', encoding='utf-8')
+    # CORPUS = open('moderntexts.txt', encoding='utf-8')
     # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
     print('File not found.')
@@ -889,9 +886,6 @@ while newline:
         for node in unmarked_nouns[:]:
             par = node.parent()
             while par is not None and par.label()[:2] not in ['CP', 'IP']:
-                if find_base_pos(node)[:5] in ['*pro*', '*arb*']:
-                    par = find_base_pos(node)
-                    continue
                 if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
                     unmarked_nouns.remove(node)
                     current_tree[node.treeposition()] = mark(node, 'D')
@@ -908,7 +902,7 @@ while newline:
         for node in unmarked_nouns[:]:
             for node2 in unmarked_nouns[:]:
                 if node != node2 and c_commands(node, node2) and \
-                   same_domain(node, node2):
+                        same_domain(n, node2):
                     unmarked_nouns.remove(node2)
                     current_tree[node2.treeposition()] = mark(node2, 'A')
 
