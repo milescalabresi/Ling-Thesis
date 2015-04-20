@@ -922,7 +922,9 @@ while newline:
     if sba_steps[2]:
         for node in unmarked_nouns[:]:
             for node2 in unmarked_nouns[:]:
-                if node != node2 and c_commands(node, node2) and \
+                if node != node2 and \
+                        c_commands(find_max_proj(node),
+                                   find_max_proj(node2)) and \
                         same_domain(node, node2):
                     unmarked_nouns.remove(node2)
                     current_tree[node2.treeposition()] = mark(node2, 'A')
