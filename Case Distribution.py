@@ -156,6 +156,27 @@ def is_unmarked(word):
             sys.exit(2)
 
 
+def find_max_proj(n_head):
+    """
+    Find the maximal projection of a given noun head, ignoring appropriate
+    intermediate layers.
+    :param n_head: A noun head in a tree
+    :return:
+    """
+    assert is_noun(n_head)
+    # These labels are empirically the ones that intervene between N heads
+    # and their maximum projections. NP-internal possessors are a known
+    # pitfall, so we stop specifically at them.
+    while n_head.parent() is not None and n_head.label()[:6] != 'NP-POS' and\
+            ((n_head.parent().label()[:2] == 'NP') or
+             (n_head.parent().label()[:2] == 'NX') or
+             (n_head.parent().label()[:5] == 'CONJP') or
+             (n_head.parent().label()[:4] == 'CODE')):
+        n_head = n_head.parent()
+    assert n_head.label()[:5] != 'CONJP' and n_head.label()[:4] != 'CODE'
+    return n_head
+
+
 def find_base_pos(word):
     """
     Find the base position of a moved constituent
@@ -902,7 +923,7 @@ while newline:
         for node in unmarked_nouns[:]:
             for node2 in unmarked_nouns[:]:
                 if node != node2 and c_commands(node, node2) and \
-                        same_domain(n, node2):
+                        same_domain(node, node2):
                     unmarked_nouns.remove(node2)
                     current_tree[node2.treeposition()] = mark(node2, 'A')
 
