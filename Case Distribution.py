@@ -779,6 +779,8 @@ lexfile = open('lexcasemarkers.txt', encoding='utf-8')
 newline = lexfile.readline()
 while newline:
     newline = newline.strip()
+    if newline[0] == '#':
+        continue
     LEXICON[newline[:newline.index(':')]] =\
         newline[newline.index(':') + 2:].replace(' ', '').split(',')
     newline = lexfile.readline()
