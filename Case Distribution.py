@@ -226,14 +226,13 @@ def find_surf_pos(word):
     assert re.match('\d', num)
     found = []
     for st in word.root().subtrees():
-        if st.label()[-2:] == '-' + num:
+        if st.label()[-2:] == '-' + num and re.match('W?NP', st.label()[:3]):
             found.append(st)
     if len(found) == 1:
         return found[0]
     else:
-        print('Error finding unique surface position for', word,
-              'in tree', word.root(), 'Found', found)
-        if verify():
+        if verify('Error finding unique surface position for ' + str(word) +
+                  ' in tree\n' + str(word.root()) + '\nFound ' + str(found)):
             return word
         else:
             sys.exit(1)
@@ -513,7 +512,7 @@ def find_head(np):
        np.label()[:3] not in ['WNP', 'ONE']:
         print('Bad noun phrase', np.label(), 'in find_head function:', np,
               flush=True)
-        assert np.label()[:2] == 'NP'
+        assert np.label()[:2] == 'NP' or np.label()[:3] == 'WNP'
     for child in np:
         if is_noun(child):
             return child
@@ -762,7 +761,7 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [True, False, False, False, False]  # [True, True, True, True, False]
+sba_steps = [True, False, False, False, False]
 safe_mode = False
 print_errors = False
 
