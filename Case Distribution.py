@@ -121,6 +121,12 @@ def is_noun(st, ignore_dubs=True):
                       st.right_sibling().label() != 'CONJ')):
                 return False
         return True
+    elif st.label()[0] == 'Q' or st.label()[:3] == 'ONE' and \
+            st.parent.label()[:2] == 'NP':
+        for child in st:
+            if is_noun(child):
+                return False
+        return True
     return False
 
 
