@@ -57,7 +57,7 @@ def c_commands(a, b):
     """
     :param a: any node in a tree
     :param b: any node in the same tree
-    :return: Boolean value
+    :return: Boolean value telling whether a c-commands b
     """
     assert a.root() == b.root()  # Make sure they're in the same tree.
     assert ns_dominates(a.root(), b)
@@ -240,20 +240,20 @@ def find_surf_pos(word):
 
 def mark(word, case):
     """
-    Given a node in a tree and a case string, mark that node (which should be
-    a noun) as the given case.
+    Given a node in a tree and a case as a string, mark that node (which should
+    be a noun) as the given case, and return the *root* of a new tree with that
+    change.
     :param word: a node in the tree
     :param case: a string describing a given case
     :return:
     """
     if not is_noun(word):
-        if verify(str(word) + ' doesn\'t look like not a noun.'):
-            return word
-    if case != '@':
-        if not is_unmarked(word):
-            return word
-    word.set_label(word.label()[:-1] + case)
-    return word
+        sys.exit('Trying to mark non-noun.')
+    if case != '@' and not is_unmarked(word):
+        sys.exit('Attempted overwrite of case.')
+    nt = ParentedTree.fromstring(str(word.root()))
+    nt[word.treeposition()].set_label(word.label()[:-1] + case)
+    return nt
 
 
 def mark_all(tree, case):
@@ -261,12 +261,15 @@ def mark_all(tree, case):
     a function to mark all noun heads in a given tree the same case
     :param tree: any tree
     :param case: any case marking (as a string)
-    :return: the same tree, but with all nouns marked in the given case
+    :return: the root of the tree, but with all unmarked nouns marked in the
+    given case, unless the given case is @, then all nouns, marked or not,
+    are assigned @
     """
-    for st in tree.subtrees():
+    rt = tree.root()
+    for st in tree.root().subtrees():
         if is_noun(st):
-            tree[st.treeposition()] = mark(st, case)
-    return tree
+            rt = mark(rt[st.treeposition()], case)
+    return rt
 
 
 def strip_case(tree):
@@ -494,10 +497,11 @@ def mark_random(tree, freqs=None):
     """
     if freqs is None:
         freqs = {'N': 1, 'A': 1, 'D': 1, 'G': 1}
-    for st in tree.subtrees():
+    rt = tree.root()
+    for st in tree.root().subtrees():
         if is_noun(st) and is_unmarked(st):
-            tree[st.treeposition()] = mark(st, choose_rand_weighted(freqs))
-    return tree
+            rt = mark(rt[st.treeposition()], choose_rand_weighted(freqs))
+    return rt
 
 
 def find_head(np):
@@ -517,7 +521,8 @@ def find_head(np):
         if is_noun(child):
             return child
     for child in np:
-        if not isinstance(child, str) and re.match('W?NP', child.label()[:3]):
+        if not isinstance(child, str) and re.match('W?NP', child.label()[:3]) \
+                and not re.match('-POS', child.label()):
             return find_head(child)
     verify('No N head child of NP ' + str(np))
     return np
@@ -608,7 +613,7 @@ def same_domain(a, b):
 
 def mark_args(verb, case_frame, correct_tree):
     """
-    Take a lexical item (verb, and perhaps later preposition) and find the
+    Take a lexical item (verb, or prepositions) and find the
     arguments (like subject, direct object complement) that it lexically
     governs. These will be marked for lexical case.
     Locate the various arguments of a verb
@@ -652,6 +657,8 @@ def mark_args(verb, case_frame, correct_tree):
 
     for i in range(len(case_frame)):
         if case_frame[i] != '-':
+            if verb.root() != tree:
+                verb = tree[verb.treeposition()]
             found = []
             if i == 0:  # looking for subjects
                 cc_cond = lambda x, y: c_commands(x, y)
@@ -711,10 +718,9 @@ def mark_args(verb, case_frame, correct_tree):
                         # see if it's correct, and keep stats accordingly
                         if correct_tree[arg.treeposition()].label()[-1]\
                                 == case_frame[i]:
-                            # mark the noun
-                            arg = mark(arg, case_frame[i])
-                            # make sure to do deep modification
-                            tree[arg.treeposition()] = arg
+                            # mark the noun (deep modification)
+                            tree = mark(tree[arg.treeposition()],
+                                        case_frame[i])
                             counts_by_function[i][0] += 1
                             # Count which verbs succeed most often.
                             lex_verbs[verb_lemma][0] += 1
@@ -761,15 +767,15 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [True, False, False, False, False]
+sba_steps = [True, True, True, False, False]
 safe_mode = False
 print_errors = False
 
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
     # CORPUS = open('testcorp.txt', encoding='utf-8')
-    # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
-    CORPUS = open('moderntexts.txt', encoding='utf-8')
+    CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
+    # CORPUS = open('moderntexts.txt', encoding='utf-8')
     # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
     print('File not found.')
@@ -863,19 +869,21 @@ while newline:
 
     if gfba_steps[0] or gfba_steps[1] or gfba_steps[2] or gfba_steps[3] or \
        gfba_steps[4]:
-        for node in current_tree.subtrees():
+        # Being extra careful not to mess with what we're iterating over
+        cp_tree = ParentedTree.fromstring(str(current_tree))
+        for node in cp_tree.subtrees():
             if is_noun(node) and is_unmarked(node):
                 if gfba_steps[0] and find_func(node, 'SBJ'):
-                    node = mark(node, 'N')
+                    current_tree = mark(current_tree[node.treeposition()], 'N')
                 elif gfba_steps[1] and find_func(node, 'OB1'):
-                    node = mark(node, 'A')
+                    current_tree = mark(current_tree[node.treeposition()], 'A')
                 elif gfba_steps[2] and \
                         (find_func(node, 'OB2') or find_func(node, 'OB3')):
-                    node = mark(node, 'D')
+                    current_tree = mark(current_tree[node.treeposition()], 'D')
                 elif gfba_steps[3] and find_func(node, 'PPOBJ'):
-                    node = mark(node, 'D')
+                    current_tree = mark(current_tree[node.treeposition()], 'D')
                 elif gfba_steps[4] and find_func(node, 'POS'):
-                    node = mark(node, 'G')
+                    current_tree = mark(current_tree[node.treeposition()], 'G')
 
     ##########
     # ## (3) Structure-Based Algorithm
@@ -918,54 +926,59 @@ while newline:
     unmarked_nouns = []
     for node in current_tree.subtrees():
         if is_noun(node) and is_unmarked(node):
-            unmarked_nouns.append(node)
+            unmarked_nouns.append(node.treeposition())
 
     # ## STEP 1B: "Applicative" datives (indirect objects), genitive
     # possessors, and dative prepositional objects
     if sba_steps[1]:
-        for node in unmarked_nouns[:]:
-            par = node.parent()
+        for pos in unmarked_nouns[:]:
+            par = current_tree[pos].parent()
             while par is not None and par.label()[:2] not in ['CP', 'IP']:
                 if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
-                    unmarked_nouns.remove(node)
-                    current_tree[node.treeposition()] = mark(node, 'D')
+                    unmarked_nouns.remove(pos)
+                    current_tree = mark(current_tree[pos], 'D')
                     break
                 elif par.label()[:6] == 'NP-POS':
-                    unmarked_nouns.remove(node)
-                    current_tree[node.treeposition()] = mark(node, 'G')
+                    unmarked_nouns.remove(pos)
+                    current_tree = mark(current_tree[pos], 'G')
                     break
                 else:
                     par = par.parent()
 
     # ## STEP 2: Dependent case
     if sba_steps[2]:
-        for node in unmarked_nouns[:]:
-            n = find_base_pos(node)
-            for node2 in unmarked_nouns[:]:
-                n2 = find_base_pos(node2)
+        to_be_marked_acc = []
+        for pos in unmarked_nouns:
+            n = find_base_pos(current_tree[pos])
+            for pos2 in unmarked_nouns:
+                n2 = find_base_pos(current_tree[pos2])
                 if n != n2 and \
                         c_commands(find_max_proj(n),
                                    find_max_proj(n2)) and \
                         same_domain(n, n2):
-                    unmarked_nouns.remove(node2)
-                    current_tree[n2.treeposition()] = mark(n2, 'A')
+                    # avoid duplicates
+                    if pos2 not in to_be_marked_acc:
+                        to_be_marked_acc.append(pos2)
+        for t in to_be_marked_acc:
+            unmarked_nouns.remove(t)
+            current_tree = mark(current_tree[t], 'A')
 
     # ## STEP 3: Unmarked case
     if sba_steps[3]:
-        for node in unmarked_nouns[:]:
-            par = find_base_pos(node).parent()
+        for pos in unmarked_nouns[:]:
+            par = find_base_pos(current_tree[pos]).parent()
             while par is not None:
                 if par.label()[:2] == 'CP' or par.label()[:2] == 'IP':
-                    unmarked_nouns.remove(node)
-                    current_tree[node.treeposition()] = mark(node, 'N')
+                    unmarked_nouns.remove(pos)
+                    current_tree = mark(current_tree[pos], 'N')
                     break
                 else:
                     par = par.parent()
 
     # ## STEP 4: Default
     if sba_steps[4]:
-        for node in unmarked_nouns[:]:
-            current_tree[node.treeposition()] = mark(node, 'N')
+        for pos in unmarked_nouns[:]:
+            current_tree = mark(current_tree[pos], 'N')
 
     # ####################################
     # ... and match the tree's cases against the corpus version and update
