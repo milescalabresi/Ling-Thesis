@@ -542,6 +542,7 @@ def find_func(n_head, func):
     while n_head.parent() is not None and \
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
+             (n_head.parent().label()[:3] == 'WNP') or
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
         n_head = n_head.parent()
@@ -935,6 +936,7 @@ while newline:
             par = current_tree[pos].parent()
             while par is not None and ((par.label()[:2] == 'NP') or
                                        (par.label()[:2] == 'NX') or
+                                       (par.label()[:3] == 'WNP') or
                                        (par.label()[:5] == 'CONJP') or
                                        (par.label()[:4] == 'CODE') or
                                        (par.label()[:2] == 'PP') or
@@ -942,7 +944,7 @@ while newline:
                 # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
                 if par[0] == 'N':
                     par = find_base_pos(par)
-                if par.label()[:2] in 'PP' or par.label()[:3] == 'WPP' or \
+                if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP' or \
                         par.label()[:6] in ['NP-OB2', 'NP-OB3']:
                     unmarked_nouns.remove(pos)
                     current_tree = mark(current_tree[pos], 'D')
