@@ -939,6 +939,9 @@ while newline:
                                        (par.label()[:4] == 'CODE') or
                                        (par.label()[:2] == 'PP') or
                                        (par.label()[:3] == 'WPP')):
+                # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
+                if par[0] == 'N':
+                    par = find_base_pos(par)
                 if par.label()[:2] in 'PP' or par.label()[:3] == 'WPP' or \
                         par.label()[:6] in ['NP-OB2', 'NP-OB3']:
                     unmarked_nouns.remove(pos)
