@@ -933,8 +933,14 @@ while newline:
     if sba_steps[1]:
         for pos in unmarked_nouns[:]:
             par = current_tree[pos].parent()
-            while par is not None and par.label()[:2] not in ['CP', 'IP']:
-                if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP':
+            while par is not None and ((par.label()[:2] == 'NP') or
+                                       (par.label()[:2] == 'NX') or
+                                       (par.label()[:5] == 'CONJP') or
+                                       (par.label()[:4] == 'CODE') or
+                                       (par.label()[:2] == 'PP') or
+                                       (par.label()[:3] == 'WPP')):
+                if par.label()[:2] in 'PP' or par.label()[:3] == 'WPP' or \
+                        par.label()[:6] in ['NP-OB2', 'NP-OB3']:
                     unmarked_nouns.remove(pos)
                     current_tree = mark(current_tree[pos], 'D')
                     break
