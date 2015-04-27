@@ -90,7 +90,7 @@ def spec_c_commands(a, b, sym):
         return c_commands(a, b) and not c_commands(b, a)
 
 
-def is_noun(st, ignore_dubs=True):
+def is_noun(st, ignore_dubs=True, include_quants=True):
     """
     A Predicate to tell whether a given node in the tree is a noun
     and thus able to be marked with case, possibly ignoring certain kinds of
@@ -103,6 +103,8 @@ def is_noun(st, ignore_dubs=True):
     (the noun modified by the appositive, the other conjunct(s) and the first/
     leftmost proper noun in the sequence). Therefore, I choose to ignore them
     so they aren't double-counted.
+    :param include_quants: a flag to tell whether to return true for
+    quantifiers that act as pronouns (not adjectives)
     :return: Boolean
     """
     if isinstance(st, str):
@@ -121,13 +123,14 @@ def is_noun(st, ignore_dubs=True):
                       st.right_sibling().label() != 'CONJ')):
                 return False
         return True
-    elif st.label()[:2] == 'Q-' or (len(st.label()) > 2
-                                    and st.label()[:3] == 'ONE') and \
-            st.parent().label()[:2] == 'NP':
-        for child in st:
-            if is_noun(child):
-                return False
-        return True
+    elif include_quants:
+        if (re.match('W?QR?S?(\+NUM)?-[NADG@]', st.label()[:2]) or
+           st.label()[:3] == 'ONE'):
+            for child in st.parent():
+                if is_noun(child, ignore_dubs, include_quants=False) or \
+                   child.label()[:2] == 'NP':
+                    return False
+            return True
     return False
 
 
@@ -937,6 +940,7 @@ while newline:
             while par is not None and ((par.label()[:2] == 'NP') or
                                        (par.label()[:2] == 'NX') or
                                        (par.label()[:3] == 'WNP') or
+                                       (par.label()[:2] == 'QP') or
                                        (par.label()[:5] == 'CONJP') or
                                        (par.label()[:4] == 'CODE') or
                                        (par.label()[:2] == 'PP') or
