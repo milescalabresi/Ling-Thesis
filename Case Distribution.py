@@ -546,9 +546,12 @@ def find_func(n_head, func):
     while n_head.parent() is not None and \
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
+             (n_head.parent().label()[:2] == 'QP') or
              (n_head.parent().label()[:3] == 'WNP') or
              (n_head.parent().label()[:5] == 'CONJP') or
-             (n_head.parent().label()[:4] == 'CODE')):
+             (n_head.parent().label()[:4] == 'CODE') or
+             (n_head.parent().label()[:2] == 'PP') or
+             (n_head.parent().label()[:3] == 'WPP')):
         n_head = n_head.parent()
         # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
         if n_head.label()[0] == 'N':
@@ -771,8 +774,8 @@ def mark_args(verb, case_frame, correct_tree):
 
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
-gfba_steps = [False, False, False, False, False, True, True, True]
-sba_steps = [True, True, False, False, False]
+gfba_steps = [False, False, True, True, True, True, True, True]
+sba_steps = [False, False, False, False, False]
 safe_mode = False
 print_errors = False
 
