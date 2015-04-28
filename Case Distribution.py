@@ -221,12 +221,13 @@ def find_base_pos(word, a_mvmt=False):
 
 def find_surf_pos(word):
     """
-    Find the base position of a moved constituent
+    Find the surface position of a moved constituent
     :param word: a node in the tree
     :return: a different node corresponding to the surface position of word
     """
     num = word[0][-1]
-    assert re.match('\d', num)
+    if re.match('\d', num) is None:
+        return word
     found = []
     for st in word.root().subtrees():
         if st.label()[-2:] == '-' + num and re.match('W?NP', st.label()[:3]):
@@ -770,8 +771,8 @@ def mark_args(verb, case_frame, correct_tree):
 
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
-gfba_steps = [False, False, False, False, False]
-sba_steps = [True, True, True, False, False]
+gfba_steps = [False, False, False, False, False, True, True, True]
+sba_steps = [True, True, False, False, False]
 safe_mode = False
 print_errors = False
 
