@@ -179,6 +179,7 @@ def find_max_proj(n_head):
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
              (n_head.parent().label()[:2] == 'QP') or
+             (n_head.parent().label()[:3] == 'WNP') or
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
         prev = n_head
@@ -542,7 +543,6 @@ def find_func(n_head, func):
     :return: a node in the same tree corresponding to NP with the given
     function that contains the given N head, or None if none found
     """
-
     while n_head.parent() is not None and \
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
