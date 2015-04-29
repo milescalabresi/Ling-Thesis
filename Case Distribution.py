@@ -882,6 +882,7 @@ while newline:
                     current_tree = mark(current_tree[node.treeposition()], 'D')
                 elif gfba_steps[4] and find_func(node, 'POS'):
                     current_tree = mark(current_tree[node.treeposition()], 'G')
+        del cp_tree
 
     ##########
     # ## (3) Structure-Based Algorithm
@@ -890,7 +891,9 @@ while newline:
     # ## STEP 1: Lexically marked case
     # ## 1a: "quirky" verbs and prepositions
     if sba_steps[0]:
-        for node in current_tree.subtrees():
+        # Being extra careful not to mess with what we're iterating over
+        cp_tree = ParentedTree.fromstring(str(current_tree))
+        for node in cp.subtrees():
             if is_verb(node):
                 try:
                     # extract the lemma of the verb from the tree node
@@ -918,6 +921,7 @@ while newline:
                 except ValueError:
                     verify('Can\'t find dash char to find lemma of verb '
                            + node[0] + ' in tree\n' + str(node.root()))
+        del cp_tree
 
     # ## For efficiency, keep track of all unmarked nouns instead of searching
     # ## the whole tree at each of the following steps.
