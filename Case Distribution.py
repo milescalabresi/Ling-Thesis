@@ -893,7 +893,7 @@ while newline:
     if sba_steps[0]:
         # Being extra careful not to mess with what we're iterating over
         cp_tree = ParentedTree.fromstring(str(current_tree))
-        for node in cp.subtrees():
+        for node in cp_tree.subtrees():
             if is_verb(node):
                 try:
                     # extract the lemma of the verb from the tree node
