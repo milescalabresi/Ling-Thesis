@@ -766,8 +766,8 @@ def mark_args(verb, case_frame, correct_tree):
 
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
-gfba_steps = [True, True, True, True, True, True]
-sba_steps = [False, False, False, False, False]
+gfba_steps = [False, False, False, False, False]
+sba_steps = [True, True, True, True, True, False]
 safe_mode = False
 print_errors = False
 
@@ -974,11 +974,13 @@ while newline:
     # ## STEP 3: Unmarked case
     if sba_steps[3]:
         for pos in unmarked_nouns[:]:
-            par = find_base_pos(current_tree[pos]).parent()
+            par = current_tree[pos[1]].parent()
             while par is not None:
-                if par.label()[:2] == 'CP' or par.label()[:2] == 'IP':
+                if par.label()[:2] in ['CP', 'NP', 'PP'] or \
+                        par.label()[:3] == 'WNP' or \
+                        par.label()[:6] == 'IP-MAT':
                     unmarked_nouns.remove(pos)
-                    current_tree = mark(current_tree[pos], 'N')
+                    current_tree = mark(current_tree[pos[0]], 'N')
                     break
                 else:
                     par = par.parent()
@@ -986,7 +988,7 @@ while newline:
     # ## STEP 4: Default
     if sba_steps[4]:
         for pos in unmarked_nouns[:]:
-            current_tree = mark(current_tree[pos], 'N')
+            current_tree = mark(current_tree[pos[0]], 'N')
 
     # ####################################
     # ... and match the tree's cases against the corpus version and update
