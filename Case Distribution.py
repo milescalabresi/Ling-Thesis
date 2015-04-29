@@ -159,11 +159,8 @@ def is_unmarked(word):
     if is_noun(word):
         return word.label()[-1] == '@'
     else:
-        if verify('Error: The node ' + word +
-                  ' inputted is not a noun; cannot check case marking.'):
-            return False
-        else:
-            sys.exit(2)
+        sys.exit('Error: The node ' + word +
+                 ' inputted is not a noun; cannot check case marking.')
 
 
 def find_max_proj(n_head):
@@ -181,6 +178,7 @@ def find_max_proj(n_head):
     while n_head.parent() is not None and n_head.label()[:6] != 'NP-POS' and\
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
+             (n_head.parent().label()[:2] == 'QP') or
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
         prev = n_head
@@ -192,10 +190,11 @@ def find_max_proj(n_head):
 
 def find_base_pos(word, a_mvmt=False):
     """
-    Find the base position of a moved constituent
+    Find and return the base position of a constituent (defined as its current
+    position if it hasn't been moved)
     :param word: a node in the tree
     :param a_mvmt: flag to toggle whether to move down to base position of
-    A-movement or just A'-movement (default)
+    A-movement and A'-movement or just A'-movement (default)
     :return: a different node corresponding to the base position of word
     """
     if len(word.label()) < 2:
@@ -221,9 +220,10 @@ def find_base_pos(word, a_mvmt=False):
 
 def find_surf_pos(word):
     """
-    Find the surface position of a moved constituent
+    Find the surface position of a moved constituent, or its current position
+    if the constituent is not moved
     :param word: a node in the tree
-    :return: a different node corresponding to the surface position of word
+    :return: a node corresponding to the surface position of word
     """
     num = word[0][-1]
     if re.match('\d', num) is None:
