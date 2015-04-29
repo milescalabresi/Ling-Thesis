@@ -649,7 +649,7 @@ def mark_args(verb, case_frame, correct_tree):
     arg_types = [['subject', 'SBJ', 'SBJ'],
                  ['indirect object', 'OB2', 'OB3'],
                  ['direct object', 'OB1', 'OB1']]
-    # For i = 1 (indirect objects), we need to check if it might OB3 or OB2
+    # For i = 1 (indirect objects), we need to check if it is OB2 or OB3
     # For i = 0 or 2, we just check the first condition again (hence the
     # redundant third item in those sub-lists.
 
@@ -669,9 +669,12 @@ def mark_args(verb, case_frame, correct_tree):
                 # For verbs, we must find the right kind of argument like -SBJ.
                 # For prepositions, it is sufficient to find just an NP.
                 if (st.label()[:6] == 'NP-' + str(arg_types[i][1]) or
+                    st.label()[:7] == 'WNP-' + str(arg_types[i][1]) or
                     st.label()[:6] == 'NP-' + str(arg_types[i][2]) or
-                    (st.label()[:2] == 'NP' and verb.label() == 'P')) and \
-                   cc_cond(st, verb) and same_domain(st, verb):
+                    st.label()[:7] == 'WNP-' + str(arg_types[i][2]) or
+                    ((st.label()[:2] == 'NP' or st.label()[:3] == 'WNP')
+                     and verb.label() == 'P')) and cc_cond(st, verb) and \
+                        same_domain(st, verb):
                     if st[0][-7:-2] == '*ICH*' or st[0][-5:-2] == '*T*' or \
                             st[0][:2] == '*-':
                         st = find_surf_pos(st)
