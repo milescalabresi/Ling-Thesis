@@ -543,26 +543,16 @@ def find_func(n_head, func):
     :return: a node in the same tree corresponding to NP with the given
     function that contains the given N head, or None if none found
     """
-    while n_head.parent() is not None and \
-            ((n_head.parent().label()[:2] == 'NP') or
-             (n_head.parent().label()[:2] == 'NX') or
-             (n_head.parent().label()[:2] == 'QP') or
-             (n_head.parent().label()[:3] == 'WNP') or
-             (n_head.parent().label()[:5] == 'CONJP') or
-             (n_head.parent().label()[:4] == 'CODE') or
-             (n_head.parent().label()[:2] == 'PP') or
-             (n_head.parent().label()[:3] == 'WPP')):
-        n_head = n_head.parent()
-        # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
-        if n_head.label()[0] == 'N':
-            n_head = find_base_pos(n_head)
-    if n_head.label()[:3+len(func)] == 'NP-' + func:
-        return n_head
-    elif (n_head.label()[:2] == 'PP' or
-          n_head.label()[:3] == 'WPP') and func == 'PPOBJ':
+    np = find_max_proj(n_head)
+    # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
+    if np.label()[0] == 'N':
+        np = find_base_pos(np)
+    if re.match('W?PP', np.parent().label()[:3]) and func == 'PPOBJ':
         return True
+    elif np.label()[:3+len(func)] == 'NP-' + func:
+        return np
     else:
-        verify('No function found in' + str(n_head))
+        verify('No function found in' + str(np) + '\n\n' + str(n_head))
         return None
 
 
@@ -774,7 +764,7 @@ def mark_args(verb, case_frame, correct_tree):
 
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
-gfba_steps = [False, False, True, True, True, True, True, True]
+gfba_steps = [True, True, True, True, True, True]
 sba_steps = [False, False, False, False, False]
 safe_mode = False
 print_errors = False
