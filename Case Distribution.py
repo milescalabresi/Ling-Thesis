@@ -543,13 +543,12 @@ def find_func(n_head, func):
     :return: a node in the same tree corresponding to NP with the given
     function that contains the given N head, or None if none found
     """
-    np = find_max_proj(n_head)
     # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
-    if np.label()[0] == 'N':
-        np = find_base_pos(np)
+    np = find_base_pos(find_max_proj(n_head))
     if re.match('W?PP', np.parent().label()[:3]) and func == 'PPOBJ':
         return True
-    elif np.label()[:3+len(func)] == 'NP-' + func:
+    elif np.label()[:3+len(func)] == 'NP-' + func or np.label()[:4+len(func)]\
+            == 'WNP-' + func:
         return np
     else:
         verify('No function found in' + str(np) + '\n\n' + str(n_head))
@@ -931,53 +930,46 @@ while newline:
     unmarked_nouns = []
     for node in current_tree.subtrees():
         if is_noun(node) and is_unmarked(node):
-            unmarked_nouns.append(node.treeposition())
+            # add both the node and the base position of its maximal
+            # projection (find_base_pos is benign if the node wasn't moved
+            # (or A'-moved, if you want to exclude A-movement)
+            unmarked_nouns.append([node.treeposition(),
+                                   find_base_pos(
+                find_max_proj(node)).treeposition()])
 
     # ## STEP 1B: "Applicative" datives (indirect objects), genitive
     # possessors, and dative prepositional objects
     if sba_steps[1]:
         for pos in unmarked_nouns[:]:
-            par = current_tree[pos].parent()
-            while par is not None and ((par.label()[:2] == 'NP') or
-                                       (par.label()[:2] == 'NX') or
-                                       (par.label()[:3] == 'WNP') or
-                                       (par.label()[:2] == 'QP') or
-                                       (par.label()[:5] == 'CONJP') or
-                                       (par.label()[:4] == 'CODE') or
-                                       (par.label()[:2] == 'PP') or
-                                       (par.label()[:3] == 'WPP')):
-                # find_base_pos is benign if the NP/NX parent wasn't (A'-)moved
-                if par[0] == 'N':
-                    par = find_base_pos(par)
-                if par.label()[:2] == 'PP' or par.label()[:3] == 'WPP' or \
-                        par.label()[:6] in ['NP-OB2', 'NP-OB3']:
+                if current_tree[pos[1]].parent().label()[:2] == 'PP' \
+                        or current_tree[pos[1]].parent().label()[:3] == 'WPP' \
+                        or current_tree[pos[1]].label()[:6] in ['NP-OB2',
+                                                                'NP-OB3'] \
+                        or current_tree[pos[1]].label()[:7] in ['WNP-OB2',
+                                                                'WNP-OB3']:
                     unmarked_nouns.remove(pos)
-                    current_tree = mark(current_tree[pos], 'D')
-                    break
-                elif par.label()[:6] == 'NP-POS':
+                    current_tree = mark(current_tree[pos[0]], 'D')
+                elif current_tree[pos[1]].label()[:6] == 'NP-POS' \
+                        or current_tree[pos[1]].label()[:7] == 'WNP-POS':
                     unmarked_nouns.remove(pos)
-                    current_tree = mark(current_tree[pos], 'G')
-                    break
-                else:
-                    par = par.parent()
+                    current_tree = mark(current_tree[pos[0]], 'G')
 
     # ## STEP 2: Dependent case
     if sba_steps[2]:
         to_be_marked_acc = []
         for pos in unmarked_nouns:
-            n = find_base_pos(current_tree[pos])
             for pos2 in unmarked_nouns:
-                n2 = find_base_pos(current_tree[pos2])
-                if n != n2 and \
-                        c_commands(find_max_proj(n),
-                                   find_max_proj(n2)) and \
-                        same_domain(n, n2):
+                if pos != pos2 and \
+                        c_commands(current_tree[pos[1]],
+                                   current_tree[pos2[1]]) and \
+                        same_domain(current_tree[pos[1]],
+                                    current_tree[pos2[1]]):
                     # avoid duplicates
                     if pos2 not in to_be_marked_acc:
                         to_be_marked_acc.append(pos2)
         for t in to_be_marked_acc:
             unmarked_nouns.remove(t)
-            current_tree = mark(current_tree[t], 'A')
+            current_tree = mark(current_tree[t[0]], 'A')
 
     # ## STEP 3: Unmarked case
     if sba_steps[3]:
