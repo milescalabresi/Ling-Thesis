@@ -767,7 +767,7 @@ def mark_args(verb, case_frame, correct_tree):
 # Control flow to choose which steps of which algorithms to test
 baseline_steps = [False, False, False]
 gfba_steps = [False, False, False, False, False]
-sba_steps = [True, True, True, True, True, False]
+sba_steps = [True, True, True, True, False]
 safe_mode = False
 print_errors = False
 
@@ -857,37 +857,10 @@ while newline:
     if baseline_steps[2]:
         current_tree = mark_random(current_tree)
 
-    #######################################################
-    # ## (2) Grammatical-function-based algorithm
-    # ##     Using the NP-<func> markings given in the corpus,
-    # ##     make the following case assignments:
-    # ##     NOM to subjects             NP-SBJ
-    # ##     ACC to direct objects       NP-OB1
-    # ##     DAT to indirect objects     NP-OB2 and NP-OB3
-    # ##     GEN to possessives          NP-POS
-    #######################################################
-
-    if gfba_steps[0] or gfba_steps[1] or gfba_steps[2] or gfba_steps[3] or \
-       gfba_steps[4]:
-        # Being extra careful not to mess with what we're iterating over
-        cp_tree = ParentedTree.fromstring(str(current_tree))
-        for node in cp_tree.subtrees():
-            if is_noun(node) and is_unmarked(node):
-                if gfba_steps[0] and find_func(node, 'SBJ'):
-                    current_tree = mark(current_tree[node.treeposition()], 'N')
-                elif gfba_steps[1] and find_func(node, 'OB1'):
-                    current_tree = mark(current_tree[node.treeposition()], 'A')
-                elif gfba_steps[2] and \
-                        (find_func(node, 'OB2') or find_func(node, 'OB3')):
-                    current_tree = mark(current_tree[node.treeposition()], 'D')
-                elif gfba_steps[3] and find_func(node, 'PPOBJ'):
-                    current_tree = mark(current_tree[node.treeposition()], 'D')
-                elif gfba_steps[4] and find_func(node, 'POS'):
-                    current_tree = mark(current_tree[node.treeposition()], 'G')
-        del cp_tree
-
     ##########
-    # ## (3) Structure-Based Algorithm
+    # ## (2) Structure-Based Algorithm
+    # Assign case based on an adaptation of the the structural algorithm
+    # described by McFadden (2004)
     ##########
 
     # ## STEP 1: Lexically marked case
@@ -989,6 +962,35 @@ while newline:
     if sba_steps[4]:
         for pos in unmarked_nouns[:]:
             current_tree = mark(current_tree[pos[0]], 'N')
+
+    #######################################################
+    # ## (3) Grammatical-function-based algorithm
+    # ##     Using the NP-<func> markings given in the corpus,
+    # ##     make the following case assignments:
+    # ##     NOM to subjects             NP-SBJ
+    # ##     ACC to direct objects       NP-OB1
+    # ##     DAT to indirect objects     NP-OB2 and NP-OB3 & PP objects
+    # ##     GEN to possessives          NP-POS
+    #######################################################
+
+    if gfba_steps[0] or gfba_steps[1] or gfba_steps[2] or gfba_steps[3] or \
+       gfba_steps[4]:
+        # Being extra careful not to mess with what we're iterating over
+        cp_tree = ParentedTree.fromstring(str(current_tree))
+        for node in cp_tree.subtrees():
+            if is_noun(node) and is_unmarked(node):
+                if gfba_steps[0] and find_func(node, 'SBJ'):
+                    current_tree = mark(current_tree[node.treeposition()], 'N')
+                elif gfba_steps[1] and find_func(node, 'OB1'):
+                    current_tree = mark(current_tree[node.treeposition()], 'A')
+                elif gfba_steps[2] and \
+                        (find_func(node, 'OB2') or find_func(node, 'OB3')):
+                    current_tree = mark(current_tree[node.treeposition()], 'D')
+                elif gfba_steps[3] and find_func(node, 'PPOBJ'):
+                    current_tree = mark(current_tree[node.treeposition()], 'D')
+                elif gfba_steps[4] and find_func(node, 'POS'):
+                    current_tree = mark(current_tree[node.treeposition()], 'G')
+        del cp_tree
 
     # ####################################
     # ... and match the tree's cases against the corpus version and update
