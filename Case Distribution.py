@@ -954,7 +954,7 @@ while newline:
                     current_tree = mark(current_tree[pos[0]], 'N')
                     break
                 elif par.label()[:2] in ['NP', 'PP'] \
-                        or par.label()[:3] == 'WNP':
+                        or par.label()[:3] in ['WNP', 'WPP']:
                     break
                 else:
                     par = par.parent()
