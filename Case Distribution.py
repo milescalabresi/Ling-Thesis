@@ -949,11 +949,12 @@ while newline:
         for pos in unmarked_nouns[:]:
             par = current_tree[pos[1]].parent()
             while par is not None:
-                if par.label()[:2] in ['CP', 'NP', 'PP'] or \
-                        par.label()[:3] == 'WNP' or \
-                        par.label()[:6] == 'IP-MAT':
+                if par.label()[:2] == 'CP' or par.label()[:6] == 'IP-MAT':
                     unmarked_nouns.remove(pos)
                     current_tree = mark(current_tree[pos[0]], 'N')
+                    break
+                elif par.label()[:2] in ['NP', 'PP'] \
+                        or par.label()[:3] == 'WNP':
                     break
                 else:
                     par = par.parent()
