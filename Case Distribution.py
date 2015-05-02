@@ -193,7 +193,8 @@ def find_max_proj(n_head):
     # These labels are empirically the ones that intervene between N heads
     # and their maximum projections. NP-internal possessors are a known
     # pitfall, so we stop specifically at them.
-    prev = n_head
+    prev = find_base_pos(n_head)
+    n_head = find_base_pos(n_head)
     while n_head.parent() is not None and n_head.label()[:6] != 'NP-POS' and\
             ((n_head.parent().label()[:2] == 'NP') or
              (n_head.parent().label()[:2] == 'NX') or
@@ -201,8 +202,8 @@ def find_max_proj(n_head):
              (n_head.parent().label()[:3] == 'WNP') or
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
-        prev = n_head
-        n_head = n_head.parent()
+        prev = find_base_pos(n_head)
+        n_head = find_base_pos(n_head).parent()
     if n_head.label()[:5] == 'CONJP' or n_head.label()[:4] == 'CODE':
         n_head = prev
     return n_head
