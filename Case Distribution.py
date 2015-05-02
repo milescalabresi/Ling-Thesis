@@ -65,10 +65,10 @@ def precedes(a, b):
     lca = find_least_common_ancestor(a, b)
     if a == b:
         return False
-    for c in lca.subtrees():
-        if c == a:
+    for n in lca.subtrees():
+        if n == a:
             return True
-        elif c == b:
+        elif n == b:
             return False
 
 
