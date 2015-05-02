@@ -185,7 +185,8 @@ def is_unmarked(word):
 def find_max_proj(n_head):
     """
     Find the maximal projection of a given noun head, ignoring appropriate
-    intermediate layers.
+    intermediate layers, and interpreting any intermediate projection in its
+    base position as necessary.
     :param n_head: A noun head in a tree
     :return:
     """
@@ -203,7 +204,7 @@ def find_max_proj(n_head):
              (n_head.parent().label()[:5] == 'CONJP') or
              (n_head.parent().label()[:4] == 'CODE')):
         prev = find_base_pos(n_head)
-        n_head = find_base_pos(n_head).parent()
+        n_head = find_base_pos(n_head.parent())
     if n_head.label()[:5] == 'CONJP' or n_head.label()[:4] == 'CODE':
         n_head = prev
     return n_head
