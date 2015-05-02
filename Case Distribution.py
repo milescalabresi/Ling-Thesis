@@ -53,6 +53,25 @@ def dominates(a, b):
         return ns_dominates(a, b)
 
 
+def precedes(a, b):
+    """
+    Tells whether node a precedes node b. Returns false if they the same node.
+    :param a: any node in a tree
+    :param b: any node in the same tree
+    :return: Boolean corresponding to whether a comes before b in a left-to-
+    right (depth-first) traversal of the tree
+    """
+    assert a.root() == b.root()
+    lca = find_least_common_ancestor(a, b)
+    if a == b:
+        return False
+    for c in lca.subtrees():
+        if c == a:
+            return True
+        elif c == b:
+            return False
+
+
 def c_commands(a, b):
     """
     :param a: any node in a tree
@@ -932,11 +951,10 @@ while newline:
         to_be_marked_acc = []
         for pos in unmarked_nouns:
             for pos2 in unmarked_nouns:
-                if pos != pos2 and \
-                        c_commands(current_tree[pos[1]],
-                                   current_tree[pos2[1]]) and \
-                        same_domain(current_tree[pos[1]],
-                                    current_tree[pos2[1]]):
+                n1 = current_tree[pos[1]]
+                n2 = current_tree[pos2[1]]
+                if c_commands(n1, n2) and precedes(n1, n2) and \
+                        same_domain(n1, n2):
                     # avoid duplicates
                     if pos2 not in to_be_marked_acc:
                         to_be_marked_acc.append(pos2)
