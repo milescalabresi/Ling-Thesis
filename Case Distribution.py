@@ -795,8 +795,8 @@ print_errors = False
 try:
     # CORPUS = open(sys.argv[1], encoding='utf-8')
     # CORPUS = open('testcorp.txt', encoding='utf-8')
-    CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
-    # CORPUS = open('moderntexts.txt', encoding='utf-8')
+    # CORPUS = open('icepahc-v0.9/psd/2008.ofsi.nar-sag.psd', encoding='utf-8')
+    CORPUS = open('moderntexts.txt', encoding='utf-8')
     # CORPUS = open('alltexts.txt', encoding='utf-8')
 except OSError:
     print('File not found.')
@@ -879,7 +879,7 @@ while newline:
 
     ##########
     # ## (2) Structure-Based Algorithm
-    # Assign case based on an adaptation of the the structural algorithm
+    # Assign case based on an adaptation of the structural algorithm
     # described by McFadden (2004)
     ##########
 
