@@ -990,8 +990,13 @@ while newline:
                     unmarked_nouns.remove(pos)
                     current_tree = mark(current_tree[pos[0]], 'N')
                     break
-                elif par.label()[:2] in ['NP', 'PP'] \
-                        or par.label()[:3] in ['WNP', 'WPP']:
+                elif re.match('W?PP', par.label()[:3]):
+                    unmarked_nouns.remove(pos)
+                    current_tree = mark(current_tree[pos[0]], 'D')
+                    break
+                elif re.match('W?NP', par.label()[:3]):
+                    unmarked_nouns.remove(pos)
+                    current_tree = mark(current_tree[pos[0]], 'G')
                     break
                 else:
                     par = par.parent()
