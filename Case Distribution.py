@@ -842,7 +842,6 @@ scorecard = {'NN': 0, 'NA': 0, 'ND': 0, 'NG': 0,
              'N@': 0, 'A@': 0, 'D@': 0, 'G@': 0}
 
 newline = CORPUS.readline()
-
 # Until the file is empty ...
 while newline:
     current_tree = ''
@@ -922,6 +921,7 @@ while newline:
     # ## For efficiency, keep track of all unmarked nouns instead of searching
     # ## the whole tree at each of the following steps.
     unmarked_nouns = []
+    null_subjects = []
     for node in current_tree.subtrees():
         if is_noun(node) and is_unmarked(node):
             # add both the node and the base position of its maximal
@@ -930,6 +930,9 @@ while newline:
             unmarked_nouns.append([node.treeposition(),
                                    find_base_pos(
                 find_max_proj(node)).treeposition()])
+        if isinstance(node[0], str) and node.label()[:6] == 'NP-SBJ' and \
+                node[0][:5] in ['*exp*', '*arb*', '*pro*', '*con*']:
+                null_subjects.append([node, node.treeposition()])
 
     # ## STEP 1B: "Applicative" datives (indirect objects), genitive
     # possessors, and dative prepositional objects
@@ -968,7 +971,7 @@ while newline:
     # ## STEP 2: Dependent case
     if sba_steps[2]:
         to_be_marked_acc = []
-        for pos in unmarked_nouns:
+        for pos in unmarked_nouns + null_subjects:
             for pos2 in unmarked_nouns:
                 n1 = current_tree[pos[1]]
                 n2 = current_tree[pos2[1]]
