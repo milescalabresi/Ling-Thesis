@@ -934,9 +934,26 @@ while newline:
     if sba_steps[1]:
         for pos in unmarked_nouns[:]:
                 if current_tree[pos[1]].parent().label()[:2] == 'PP' \
-                        or current_tree[pos[1]].parent().label()[:3] == 'WPP' \
-                        or current_tree[pos[1]].label()[:6] in ['NP-OB2',
-                                                                'NP-OB3'] \
+                        or current_tree[pos[1]].parent().label()[:3] == 'WPP':
+                    # if it's a preposition, mark the case specified in the
+                    # lexicon (if that exists)
+                    unmarked_nouns.remove(pos)
+                    try:
+                        for c in current_tree[pos[1]].parent():
+                            if c.label() == 'P':
+                                for frame in \
+                                        LEXICON[c[0][c[0].index('-') + 1:]]:
+                                    if frame[2] \
+                                            == corpus_tree[pos[0]].label()[-1]:
+                                        mark(current_tree[pos[0]], frame[2])
+                                        break
+                    except (ValueError, KeyError):
+                        current_tree = mark(current_tree[pos[0]], 'D')
+                    # If that failed, just mark dative as a default inside PP.
+                    if is_unmarked(current_tree[pos[0]]):
+                        current_tree = mark(current_tree[pos[0]], 'D')
+
+                elif current_tree[pos[1]].label()[:6] in ['NP-OB2', 'NP-OB3'] \
                         or current_tree[pos[1]].label()[:7] in ['WNP-OB2',
                                                                 'WNP-OB3']:
                     unmarked_nouns.remove(pos)
