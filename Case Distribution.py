@@ -274,9 +274,9 @@ def mark(word, case):
     :return:
     """
     if not is_noun(word):
-        sys.exit('Trying to mark non-noun.')
+        sys.exit('Trying to mark non-noun ' + str(word))
     if case != '@' and not is_unmarked(word):
-        sys.exit('Attempted overwrite of case.')
+        sys.exit('Attempted overwrite of case on ' + str(word))
     nt = ParentedTree.fromstring(str(word.root()))
     nt[word.treeposition()].set_label(word.label()[:-1] + case)
     return nt
@@ -950,7 +950,9 @@ while newline:
                                         LEXICON[c[0][c[0].index('-') + 1:]]:
                                     if frame[2] \
                                             == corpus_tree[pos[0]].label()[-1]:
-                                        mark(current_tree[pos[0]], frame[2])
+                                        current_tree = \
+                                            mark(current_tree[pos[0]],
+                                                 frame[2])
                                         break
                     except (ValueError, KeyError):
                         current_tree = mark(current_tree[pos[0]], 'D')
